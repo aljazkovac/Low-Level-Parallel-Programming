@@ -38,7 +38,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 void Ped::Model::tick()
 {
 	// EDIT HERE FOR ASSIGNMENT 1
-// TESTAR
 }
 
 ////////////
