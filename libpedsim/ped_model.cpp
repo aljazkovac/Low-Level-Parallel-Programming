@@ -35,6 +35,19 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	setupHeatmapSeq();
 }
 
+
+void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
+	// The thread function
+	// Using a for loop with index
+	
+	for(std::size_t i = start_idx; i < end_idx; ++i) {
+		agents[i]->computeNextDesiredPosition();
+		agents[i]->setX(agents[i]->getDesiredX());
+		agents[i]->setY(agents[i]->getDesiredY());
+	}
+
+}
+
 void Ped::Model::tick()
 {
 	// EDIT HERE FOR ASSIGNMENT 1 
@@ -42,12 +55,13 @@ void Ped::Model::tick()
 	// 2. Calculate its next desired position
 	// 3. Set its position to the calculated desired one
 	//
-	for (const auto& agent: agents) {
-		agent->computeNextDesiredPosition();
-		agent->setX(agent->getDesiredX());
-		agent->setY(agent->getDesiredY());
-	}
+	std::thread first (thread_func, agents, 0, agents.size()/2);
+	std::thread second (thread_func, agents, agents.size()/2, agents.size());
+		
+	first.join();
+	second.join();
 }
+
 
 ////////////
 /// Everything below here relevant for Assignment 3.
