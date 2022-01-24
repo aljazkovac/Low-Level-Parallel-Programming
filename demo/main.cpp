@@ -34,6 +34,10 @@ int main(int argc, char*argv[]) {
 	int i = 1;
 	QString scenefile = "scenario.xml";
 
+	// Change this variable when testing different versions of your code. 
+	// May need modification or extension in later assignments depending on your implementations
+	Ped::IMPLEMENTATION implementation_to_test = Ped::SEQ;
+
 	// Argument handling
 	while (i < argc)
 	{
@@ -46,8 +50,20 @@ int main(int argc, char*argv[]) {
 			}
 			else if (strcmp(&argv[i][2], "help") == 0)
 			{
-				cout << "Usage: " << argv[0] << " [--help] [--timing-mode] [scenario]" << endl;
+				cout << "Usage: " << argv[0] << " [--help] [--timing-mode] [--implementation IMPL] [scenario]" << endl;
 				return 0;
+			}
+			else if (strcmp(&argv[i][2], "implementation") == 0)
+			{
+				i += 1;
+				if (strcmp(&argv[i][0], "PTHREAD") == 0)
+				{ 
+					implementation_to_test = Ped::PTHREAD;
+				}
+				else if (strcmp(&argv[i][0], "SEQ") != 0)
+				{
+					cerr << "Unrecognized implementation: \"" << argv[i] << "\". Try one of SEQ | PTHREADS  " << endl;
+				}
 			}
 			else
 			{
@@ -61,6 +77,11 @@ int main(int argc, char*argv[]) {
 
 		i += 1;
 	}
+	
+	// Dumb debugging
+	cout << implementation_to_test;
+	cout << "\n";
+
 	int retval = 0;
 	{ // This scope is for the purpose of removing false memory leak positives
 
@@ -100,9 +121,6 @@ int main(int argc, char*argv[]) {
 				cout << "Reference time: " << duration_seq.count() << " milliseconds, " << fps_seq << " Frames Per Second." << std::endl;
 			}
 
-			// Change this variable when testing different versions of your code. 
-			// May need modification or extension in later assignments depending on your implementations
-			Ped::IMPLEMENTATION implementation_to_test = Ped::SEQ;
 			{
 				Ped::Model model;
 				ParseScenario parser(scenefile);
