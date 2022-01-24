@@ -37,7 +37,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 void Ped::Model::tick()
 {
-	// EDIT HERE FOR ASSIGNMENT 1
+	// EDIT HERE FOR ASSIGNMENT 1 
+	// 1. Retrieve each agent
+	// 2. Calculate its next desired position
+	// 3. Set its position to the calculated desired one
+	//
+	for (const auto& agent: agents) {
+		agent->computeNextDesiredPosition();
+		agent->setX(agent->getDesiredX());
+		agent->setY(agent->getDesiredY());
+	}
 }
 
 ////////////
