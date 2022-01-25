@@ -17,7 +17,7 @@
 
 #include <stdlib.h>
 
-void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation)
+void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
 {
 	// Convenience test: does CUDA work on this machine?
 	cuda_test();
@@ -31,10 +31,12 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Sets the chosen implemenation. Standard in the given code is SEQ
 	this->implementation = implementation;
 
+	// Set number of threads to default value
+	this->number_of_threads = number_of_threads;
+
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 }
-
 
 void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
 	// The thread function
@@ -45,7 +47,6 @@ void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
 		agents[i]->setX(agents[i]->getDesiredX());
 		agents[i]->setY(agents[i]->getDesiredY());
 	}
-
 }
 
 void Ped::Model::tick()
@@ -64,13 +65,15 @@ void Ped::Model::tick()
 			}
 	}
 	else if (this->implementation == Ped::PTHREAD) {
-		int number_of_threads = 8;
+		// int number_of_threads = 8;
 		std::vector<std::thread> threads;
-		int size = agents.size();
-		int chunk_size = size/number_of_threads;
+		int chunk_size = agents.size() / this->number_of_threads;
 
-		for (int i = 0; i < number_of_threads; i++) {
+		for (int i = 0; i < this->number_of_threads; i++) {
+
+			//Make sure not to miss any elements at the end of agent vector
 			int end_idx = std::min((i+1)*chunk_size, (int) agents.size());
+
 			threads.push_back(std::thread(thread_func, agents, i*chunk_size, end_idx));
 		}
 
