@@ -64,14 +64,21 @@ void Ped::Model::tick()
 			}
 	}
 	else if (this->implementation == Ped::PTHREAD) {
-		std::thread first (thread_func, agents, 0, agents.size()/2);
-		std::thread second (thread_func, agents, agents.size()/2, agents.size());
-			
-		first.join();
-		second.join();
-}
+		int number_of_threads = 8;
+		std::vector<std::thread> threads;
+		int size = agents.size();
+		int chunk_size = size/number_of_threads;
 
+		for (int i = 0; i < number_of_threads; i++) {
+			int end_idx = std::min((i+1)*chunk_size, (int) agents.size());
+			threads.push_back(std::thread(thread_func, agents, i*chunk_size, end_idx));
+		}
+
+		for (std::thread & t : threads) {
+			t.join();
+		}
 	}
+}
 
 
 ////////////
