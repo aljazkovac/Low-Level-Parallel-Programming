@@ -77,10 +77,6 @@ int main(int argc, char*argv[]) {
 
 		i += 1;
 	}
-	
-	// Dumb debugging
-	cout << implementation_to_test;
-	cout << "\n";
 
 	int retval = 0;
 	{ // This scope is for the purpose of removing false memory leak positives
@@ -88,7 +84,7 @@ int main(int argc, char*argv[]) {
 		// Reading the scenario file and setting up the crowd simulation model
 		Ped::Model model;
 		ParseScenario parser(scenefile);
-		model.setup(parser.getAgents(), parser.getWaypoints(), Ped::SEQ);
+		model.setup(parser.getAgents(), parser.getWaypoints(), implementation_to_test);
 
 		// GUI related set ups
 		QApplication app(argc, argv);

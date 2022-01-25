@@ -55,12 +55,23 @@ void Ped::Model::tick()
 	// 2. Calculate its next desired position
 	// 3. Set its position to the calculated desired one
 	//
-	std::thread first (thread_func, agents, 0, agents.size()/2);
-	std::thread second (thread_func, agents, agents.size()/2, agents.size());
-		
-	first.join();
-	second.join();
+
+	if (this->implementation == Ped::SEQ) {
+		for (const auto& agent: agents) {
+				agent->computeNextDesiredPosition();
+				agent->setX(agent->getDesiredX());
+				agent->setY(agent->getDesiredY());
+			}
+	}
+	else if (this->implementation == Ped::PTHREAD) {
+		std::thread first (thread_func, agents, 0, agents.size()/2);
+		std::thread second (thread_func, agents, agents.size()/2, agents.size());
+			
+		first.join();
+		second.join();
 }
+
+	}
 
 
 ////////////
