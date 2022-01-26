@@ -17,6 +17,7 @@
 
 #include "ped_agent.h"
 
+// Thread function
 namespace Ped{
 	class Tagent;
 
@@ -29,8 +30,8 @@ namespace Ped{
 	public:
 
 		// Sets everything up
-		void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
-		
+		void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation, int number_of_threads = 2);		
+	
 		// Coordinates a time step in the scenario: move all agents by one step (if applicable).
 		void tick();
 
@@ -55,12 +56,15 @@ namespace Ped{
 		// agents (Assignment 1)
 		IMPLEMENTATION implementation;
 
+		// Denotes the number of threads to use in PTHREADS modes
+		int number_of_threads;
+
 		// The agents in this scenario
 		std::vector<Tagent*> agents;
 
 		// The waypoints in this scenario
 		std::vector<Twaypoint*> destinations;
-
+		
 		// Moves an agent towards its next position
 		void move(Ped::Tagent *agent);
 

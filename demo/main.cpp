@@ -34,6 +34,13 @@ int main(int argc, char*argv[]) {
 	int i = 1;
 	QString scenefile = "scenario.xml";
 
+	// Change this variable when testing different versions of your code. 
+	// May need modification or extension in later assignments depending on your implementations
+	Ped::IMPLEMENTATION implementation_to_test = Ped::SEQ;
+
+	// Number of threads to use in PTHREADS implementation
+	int number_of_threads = 2;
+
 	// Argument handling
 	while (i < argc)
 	{
@@ -46,8 +53,25 @@ int main(int argc, char*argv[]) {
 			}
 			else if (strcmp(&argv[i][2], "help") == 0)
 			{
-				cout << "Usage: " << argv[0] << " [--help] [--timing-mode] [scenario]" << endl;
+				cout << "Usage: " << argv[0] << " [--help] [--timing-mode] [--implementation IMPL] [--threads N] [scenario]" << endl;
 				return 0;
+			}
+			else if (strcmp(&argv[i][2], "implementation") == 0)
+			{
+				i += 1;
+				if (strcmp(&argv[i][0], "PTHREAD") == 0)
+				{ 
+					implementation_to_test = Ped::PTHREAD;
+				}
+				else if (strcmp(&argv[i][0], "SEQ") != 0)
+				{
+					cerr << "Unrecognized implementation: \"" << argv[i] << "\". Try one of SEQ | PTHREADS  " << endl;
+				}
+			}
+			else if (strcmp(&argv[i][2], "threads") == 0)
+			{
+				i += 1;
+				number_of_threads = std::stoi(&argv[i][0]);
 			}
 			else
 			{
@@ -61,13 +85,14 @@ int main(int argc, char*argv[]) {
 
 		i += 1;
 	}
+
 	int retval = 0;
 	{ // This scope is for the purpose of removing false memory leak positives
 
 		// Reading the scenario file and setting up the crowd simulation model
 		Ped::Model model;
 		ParseScenario parser(scenefile);
-		model.setup(parser.getAgents(), parser.getWaypoints(), Ped::SEQ);
+		model.setup(parser.getAgents(), parser.getWaypoints(), implementation_to_test);
 
 		// GUI related set ups
 		QApplication app(argc, argv);
@@ -100,13 +125,10 @@ int main(int argc, char*argv[]) {
 				cout << "Reference time: " << duration_seq.count() << " milliseconds, " << fps_seq << " Frames Per Second." << std::endl;
 			}
 
-			// Change this variable when testing different versions of your code. 
-			// May need modification or extension in later assignments depending on your implementations
-			Ped::IMPLEMENTATION implementation_to_test = Ped::SEQ;
 			{
 				Ped::Model model;
 				ParseScenario parser(scenefile);
-				model.setup(parser.getAgents(), parser.getWaypoints(), implementation_to_test);
+				model.setup(parser.getAgents(), parser.getWaypoints(), implementation_to_test, number_of_threads);
 				PedSimulation simulation(model, mainwindow);
 				// Simulation mode to use when profiling (without any GUI)
 				std::cout << "Running target version...\n";
