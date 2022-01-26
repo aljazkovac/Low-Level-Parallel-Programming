@@ -59,10 +59,14 @@ int main(int argc, char*argv[]) {
 			else if (strcmp(&argv[i][2], "implementation") == 0)
 			{
 				i += 1;
-				if (strcmp(&argv[i][0], "PTHREAD") == 0)
+				if (strcmp(&argv[i][0], "CTHREADS") == 0)
 				{ 
-					implementation_to_test = Ped::PTHREAD;
+					implementation_to_test = Ped::CTHREADS;
 				}
+				else if (strcmp(&argv[i][0], "OMP") == 0) 
+                                {
+                                        implementation_to_test = Ped::OMP;
+                                }
 				else if (strcmp(&argv[i][0], "SEQ") != 0)
 				{
 					cerr << "Unrecognized implementation: \"" << argv[i] << "\". Try one of SEQ | PTHREADS  " << endl;

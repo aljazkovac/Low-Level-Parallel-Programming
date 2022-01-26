@@ -23,7 +23,7 @@ namespace Ped{
 
 	// The implementation modes for Assignment 1 + 2:
 	// chooses which implementation to use for tick()
-	enum IMPLEMENTATION { CUDA, VECTOR, OMP, PTHREAD, SEQ };
+	enum IMPLEMENTATION { CUDA, VECTOR, OMP, PTHREAD, CTHREADS, SEQ };
 
 	class Model
 	{
