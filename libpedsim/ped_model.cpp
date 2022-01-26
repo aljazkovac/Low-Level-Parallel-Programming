@@ -64,8 +64,7 @@ void Ped::Model::tick()
 				agent->setY(agent->getDesiredY());
 			}
 	}
-	else if (this->implementation == Ped::PTHREAD) {
-		// int number_of_threads = 8;
+	else if (this->implementation == Ped::CTHREADS) {
 		std::vector<std::thread> threads;
 		int chunk_size = agents.size() / this->number_of_threads;
 
@@ -81,8 +80,15 @@ void Ped::Model::tick()
 			t.join();
 		}
 	}
+	else if (this->implementation == Ped::OMP) {
+                #pragma omp parallel for
+                for (const auto& agent: agents) {
+                        agent->computeNextDesiredPosition();
+                        agent->setX(agent->getDesiredX());
+                        agent->setY(agent->getDesiredY());
+                }
+	}
 }
-
 
 ////////////
 /// Everything below here relevant for Assignment 3.
