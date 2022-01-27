@@ -81,6 +81,7 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
+                omp_set_num_threads(this->number_of_threads);
                 #pragma omp parallel for
                 for (const auto& agent: agents) {
                         agent->computeNextDesiredPosition();
