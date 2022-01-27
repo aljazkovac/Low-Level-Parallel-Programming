@@ -65,7 +65,7 @@ void Ped::Model::tick()
 			}
 	}
 	else if (this->implementation == Ped::CTHREADS) {
-		std::vector<std::thread> threads;
+		std::thread threads[this->number_of_threads];
 		int chunk_size = agents.size() / this->number_of_threads;
 
 		for (int i = 0; i < this->number_of_threads; i++) {
@@ -73,7 +73,7 @@ void Ped::Model::tick()
 			//Make sure not to miss any elements at the end of agent vector
 			int end_idx = std::min((i+1)*chunk_size, (int) agents.size());
 
-			threads.push_back(std::thread(thread_func, agents, i*chunk_size, end_idx));
+			threads[i] = std::thread(thread_func, agents, i*chunk_size, end_idx);
 		}
 
 		for (std::thread & t : threads) {
