@@ -52,12 +52,13 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	    xArray[i] = agents[i]->getX();
 	    yArray[i] = agents[i]->getY();
 
-	    agents[i]->destination = getNextDestination();
+	    agents[i]->destination = agents[i]->getNextDestination();
 	    destXarray[i] = agents[i]->destination->getx();
 	    destYarray[i] = agents[i]->destination->gety();
 	    destRarray[i] = agents[i]->destination->getr();
 
 	    destReached[i] = 0;
+	  }
 	}
 }
 
