@@ -47,6 +47,17 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  destRarray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
 
 	  destReached = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
+
+	  for (int i = 0; i < agents.size(); i++) {
+	    xArray[i] = agents[i]->getX();
+	    yArray[i] = agents[i]->getY();
+
+	    agents[i]->destination = getNextDestination();
+	    destXarray[i] = agents[i]->destination->getx();
+	    destYarray[i] = agents[i]->destination->gety();
+	    destRarray[i] = agents[i]->destination->getr();
+
+	    destReached[i] = 0;
 	}
 }
 
@@ -100,6 +111,16 @@ void Ped::Model::tick()
                         agent->setX(agent->getDesiredX());
                         agent->setY(agent->getDesiredY());
                 }
+	}
+	else if (this->implementation == Ped::OMP) {
+	  int i;
+	  __m128 t0, t1, temp;
+	  for (i = 0; i < agents.size(); i+=4) {
+	    t0 = _mm_load_ps(&xArray[i]);
+	    t1 = _mm_load_ps(&yArray[i]);
+
+	    
+	    
 	}
 }
 
