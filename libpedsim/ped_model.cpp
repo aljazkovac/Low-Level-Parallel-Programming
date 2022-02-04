@@ -39,14 +39,14 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	setupHeatmapSeq();
 	
 	if (this->implementation == Ped::SIMD) {
-	  xArray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
-	  yArray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
+	  xArray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+	  yArray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
 
-	  destXarray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
-	  destYarray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
-	  destRarray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
+	  destXarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+	  destYarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+	  destRarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
 
-	  destReached = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
+	  destReached = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
 
 	  for (int i = 0; i < agents.size(); i++) {
 	    xArray[i] = agents[i]->getX();
