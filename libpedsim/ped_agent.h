@@ -49,6 +49,7 @@ namespace Ped {
 		void addWaypoint(Twaypoint* wp);
 
 	  Twaypoint* getNextDestination();
+	  Twaypoint* destination;
 
 	private:
 		Tagent() {};
@@ -62,7 +63,7 @@ namespace Ped {
 		int desiredPositionY;
 
 		// The current destination (may require several steps to reach)
-		Twaypoint* destination;
+		
 
 		// The last destination
 		Twaypoint* lastDestination;
