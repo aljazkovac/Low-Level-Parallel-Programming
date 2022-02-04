@@ -113,12 +113,22 @@ void Ped::Model::tick()
                         agent->setY(agent->getDesiredY());
                 }
 	}
-	else if (this->implementation == Ped::OMP) {
+	else if (this->implementation == Ped::SIMD) {
 	  int i;
-	  __m128 t0, t1, temp;
+	  __m128 t0, t1, t2, t3, t4, t5, reached,diffX, diffY;
 	  for (i = 0; i < agents.size(); i+=4) {
 	    t0 = _mm_load_ps(&xArray[i]);
-	    t1 = _mm_load_ps(&yArray[i]);
+	    t1 = _mm_load_ps(&destXarray[i]);
+	    diffX = _mm_sub_ps(t1, t0); // diffX = destX-agentX
+
+	    t2 = _mm_load_ps(&yArray[i]);
+	    t3 = _mm_load_ps(&destYarray[i]);
+	    diffY = _mm_sub_ps(t3, t2);
+
+	    // length = sqrt(diffX^2 + diffY^2)
+	    t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
+	    t5 = _mm_load_ps(&destRarray[i]);
+	    reached = _mm_cmpgt_ps(t5, t4);
 	  }
 	}
 }
