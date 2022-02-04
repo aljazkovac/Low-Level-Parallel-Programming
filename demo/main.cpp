@@ -67,6 +67,10 @@ int main(int argc, char*argv[]) {
                                 {
                                         implementation_to_test = Ped::OMP;
                                 }
+				else if (strcmp(&argv[i][0], "SIMD") == 0) 
+                                {
+                                        implementation_to_test = Ped::SIMD;
+                                }
 				else if (strcmp(&argv[i][0], "SEQ") != 0)
 				{
 					cerr << "Unrecognized implementation: \"" << argv[i] << "\". Try one of SEQ | PTHREADS  " << endl;

@@ -14,6 +14,7 @@
 #include "cuda_testkernel.h"
 #include <omp.h>
 #include <thread>
+#include <emmintrin.h>
 
 #include <stdlib.h>
 
