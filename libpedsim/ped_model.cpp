@@ -119,9 +119,7 @@ void Ped::Model::tick()
 	  for (i = 0; i < agents.size(); i+=4) {
 	    t0 = _mm_load_ps(&xArray[i]);
 	    t1 = _mm_load_ps(&yArray[i]);
-
-	    
-	    
+	  }
 	}
 }
 
