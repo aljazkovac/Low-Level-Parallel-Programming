@@ -15,7 +15,7 @@
 #include <omp.h>
 #include <thread>
 #include <emmintrin.h>
-
+#include <smmintrin.h>
 #include <stdlib.h>
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
@@ -51,14 +51,15 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  for (int i = 0; i < agents.size(); i++) {
 	    xArray[i] = agents[i]->getX();
 	    yArray[i] = agents[i]->getY();
+	
+ 	    Ped::Twaypoint* dest = agents[i]->getDest();
+	    agents[i]->setDest(dest);
+	    destXarray[i] = agents[i]->getDest()->getx();
+	    destYarray[i] = agents[i]->getDest()->gety();
+	    destRarray[i] = agents[i]->getDest()->getr();
 
-	    agents[i]->destination = agents[i]->getNextDestination();
-	    destXarray[i] = agents[i]->destination->getx();
-	    destYarray[i] = agents[i]->destination->gety();
-	    destRarray[i] = agents[i]->destination->getr();
-
-	    destReached[i] = 0;
-	  }
+	    destReached[i] = 0;  
+	}
 	}
 }
 
@@ -115,7 +116,7 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::SIMD) {
 	  int i;
-	  __m128 t0, t1, t2, t3, t4, t5, reached,diffX, diffY;
+	  __m128 t0, t1, t2, t3, t4, t5, t6, reached,diffX, diffY;
 	  for (i = 0; i < agents.size(); i+=4) {
 	    t0 = _mm_load_ps(&xArray[i]);
 	    t1 = _mm_load_ps(&destXarray[i]);
@@ -129,8 +130,28 @@ void Ped::Model::tick()
 	    t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
 	    t5 = _mm_load_ps(&destRarray[i]);
 	    reached = _mm_cmpgt_ps(t5, t4);
-	  }
+	    
+	    // set the bit mask and get the indices of set bits in the mask
+	    //int mask = _mm_movemask_ps(reached);
+	    //for (int j = 3; j >= 0; j--) {
+	    //	int c = mask & 1;
+	//	if (c == 1) {
+	//		agents[i+j]->getWaypoints().push_back(agents[i+j]->getDest());
+	//		Ped::Twaypoint*	nextDest = agents[i+j]->getWaypoints().front(); 
+	  // 		destXarray[i+j] = nextDest->getx();
+	//		destYarray[i+j] = nextDest->gety();
+	//		destRarray[i+j] = nextDest->getr();
+	//		agents[i+j]->getWaypoints().pop_front();
+	//	 }
+	//	mask >>= 1;
+	 // }
+	   //desiredPositionX = (int)round(x + diffX / len);
+	   //desiredPositionY = (int)round(y + diffY / len)
+	   // calculate the desired positions and set them into the x and y arrays
+	  // t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+	  // _mm_store_ps(&xArray[i], t6);
 	}
+       }
 }
 
 ////////////

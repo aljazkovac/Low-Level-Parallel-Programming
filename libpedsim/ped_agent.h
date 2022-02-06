@@ -48,8 +48,12 @@ namespace Ped {
 		// Adds a new waypoint to reach for this agent
 		void addWaypoint(Twaypoint* wp);
 
-	  Twaypoint* getNextDestination();
-	  Twaypoint* destination;
+		Twaypoint* getNextDestination();
+		
+		Twaypoint* getDest() const {return destination;}	  
+		void setDest(Twaypoint* dest) { destination = dest; }
+ 	
+		deque<Twaypoint*> getWaypoints() const {return waypoints;}
 
 	private:
 		Tagent() {};
@@ -63,7 +67,7 @@ namespace Ped {
 		int desiredPositionY;
 
 		// The current destination (may require several steps to reach)
-		
+		Twaypoint* destination;	
 
 		// The last destination
 		Twaypoint* lastDestination;
