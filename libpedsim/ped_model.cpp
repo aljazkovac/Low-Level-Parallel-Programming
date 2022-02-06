@@ -17,6 +17,8 @@
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include <stdlib.h>
+#include <iostream>
+using namespace std;
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
 {
@@ -38,35 +40,45 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 	
+
 	if (this->implementation == Ped::SIMD) {
-	  xArray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
-	  yArray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		xArray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		yArray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
 
-	  destXarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
-	  destYarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
-	  destRarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		destXarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		destYarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		destRarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
 
-	  destReached = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		destReached = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
 
-	  for (int i = 0; i < agents.size(); i++) {
-	    xArray[i] = agents[i]->getX();
-	    yArray[i] = agents[i]->getY();
-	
- 	    Ped::Twaypoint* dest = agents[i]->getDest();
-	    agents[i]->setDest(dest);
-	    destXarray[i] = agents[i]->getDest()->getx();
-	    destYarray[i] = agents[i]->getDest()->gety();
-	    destRarray[i] = agents[i]->getDest()->getr();
+		__m128 t0, t1, t2, t3, t4, t5;
 
-	    destReached[i] = 0;  
-	}
+		for (int i = 0; i < agents.size(); i++) {
+			xArray[i] = agents[i]->getX();
+			yArray[i] = agents[i]->getY();
+			
+			agents[i]->destination = agents[i]->getNextDestination();
+			
+			destXarray[i] = agents[i]->destination->getx();
+			destYarray[i] = agents[i]->destination->gety();
+			destRarray[i] = agents[i]->destination->getr();
+			
+			destReached[i] = 0;
+		}
+		//_mm_free(xArray);
+		//_mm_free(yArray);
+		//_mm_free(destXarray);
+		//_mm_free(destYarray);
+		//_mm_free(destRarray);
+		//_mm_free(destReached);
+
 	}
 }
 
 void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
 	// The thread function
 	// Using a for loop with index
-	
+
 	for(std::size_t i = start_idx; i < end_idx; ++i) {
 		agents[i]->computeNextDesiredPosition();
 		agents[i]->setX(agents[i]->getDesiredX());
@@ -81,13 +93,12 @@ void Ped::Model::tick()
 	// 2. Calculate its next desired position
 	// 3. Set its position to the calculated desired one
 	//
-
 	if (this->implementation == Ped::SEQ) {
 		for (const auto& agent: agents) {
-				agent->computeNextDesiredPosition();
-				agent->setX(agent->getDesiredX());
-				agent->setY(agent->getDesiredY());
-			}
+			agent->computeNextDesiredPosition();
+			agent->setX(agent->getDesiredX());
+			agent->setY(agent->getDesiredY());
+		}
 	}
 	else if (this->implementation == Ped::CTHREADS) {
 		std::vector<std::thread> threads;
@@ -106,52 +117,55 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
-                omp_set_num_threads(this->number_of_threads);
-                #pragma omp parallel for
-                for (const auto& agent: agents) {
-                        agent->computeNextDesiredPosition();
-                        agent->setX(agent->getDesiredX());
-                        agent->setY(agent->getDesiredY());
-                }
+		omp_set_num_threads(this->number_of_threads);
+		#pragma omp parallel for
+		for (const auto& agent: agents) {
+			agent->computeNextDesiredPosition();
+			agent->setX(agent->getDesiredX());
+			agent->setY(agent->getDesiredY());
+		}
 	}
-	else if (this->implementation == Ped::SIMD) {
-	  int i;
-	  __m128 t0, t1, t2, t3, t4, t5, t6, reached,diffX, diffY;
-	  for (i = 0; i < agents.size(); i+=4) {
-	    t0 = _mm_load_ps(&xArray[i]);
-	    t1 = _mm_load_ps(&destXarray[i]);
-	    diffX = _mm_sub_ps(t1, t0); // diffX = destX-agentX
+	else if(this->implementation == Ped::SIMD) {
+		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
+		for (int i = 0; i < agents.size(); i+=4) {
+			t0 = _mm_load_ps(&xArray[i]);
+			t1 = _mm_load_ps(&destXarray[i]);
+			diffX = _mm_sub_ps(t1, t0); // diffX = destX - agentX
+			
+			t2 = _mm_load_ps(&yArray[i]);
+			t3 = _mm_load_ps(&destYarray[i]);
+			diffY = _mm_sub_ps(t3, t2); // diffY = destY - agentY
+			
+			// length = sqrt(diffX^2 + diffY^2)
+			t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
+			t5 = _mm_load_ps(&destRarray[i]);
+			reached = _mm_cmpgt_ps(t5, t4);				
+		
+			// Set the bit mask and get the indices of set bits in the mask
+			int mask = _mm_movemask_ps(reached);
+			for (int j = 3; j >= 0; j--) {
+				int c = mask & 1;
+				if (c == 1) {
+					agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
+					Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
+					destXarray[i+j] = nextDest->getx();
+					destYarray[i+j] = nextDest->gety();
+					destRarray[i+j] = nextDest->getr();
+					agents[i+j]->getWaypoints().pop_front();
+				}
+				mask >>= 1;
+			}	
+			// desiredPositionX = (int)round(x + diffX/len);
+			// desiredPositionY = (int)round(y + diffY/len);
+			// Calculate the desired positions and set them into the x and y arrays
+			t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+			_mm_store_ps(&xArray[i],t6);
+			
+			t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+			_mm_store_ps(&yArray[i], t7);
+		}	
 
-	    t2 = _mm_load_ps(&yArray[i]);
-	    t3 = _mm_load_ps(&destYarray[i]);
-	    diffY = _mm_sub_ps(t3, t2);
-
-	    // length = sqrt(diffX^2 + diffY^2)
-	    t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
-	    t5 = _mm_load_ps(&destRarray[i]);
-	    reached = _mm_cmpgt_ps(t5, t4);
-	    
-	    // set the bit mask and get the indices of set bits in the mask
-	    //int mask = _mm_movemask_ps(reached);
-	    //for (int j = 3; j >= 0; j--) {
-	    //	int c = mask & 1;
-	//	if (c == 1) {
-	//		agents[i+j]->getWaypoints().push_back(agents[i+j]->getDest());
-	//		Ped::Twaypoint*	nextDest = agents[i+j]->getWaypoints().front(); 
-	  // 		destXarray[i+j] = nextDest->getx();
-	//		destYarray[i+j] = nextDest->gety();
-	//		destRarray[i+j] = nextDest->getr();
-	//		agents[i+j]->getWaypoints().pop_front();
-	//	 }
-	//	mask >>= 1;
-	 // }
-	   //desiredPositionX = (int)round(x + diffX / len);
-	   //desiredPositionY = (int)round(y + diffY / len)
-	   // calculate the desired positions and set them into the x and y arrays
-	  // t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
-	  // _mm_store_ps(&xArray[i], t6);
-	}
-       }
+	}	
 }
 
 ////////////

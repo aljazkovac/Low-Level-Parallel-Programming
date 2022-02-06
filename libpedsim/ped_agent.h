@@ -50,7 +50,11 @@ namespace Ped {
 
 		Twaypoint* getNextDestination();
 		
-		Twaypoint* getDest() const {return destination;}	  
+		// The current destination (may require several steps to reach)
+		Twaypoint* destination;	
+
+	
+		//Twaypoint* getDest() const { return destination; }	  
 		void setDest(Twaypoint* dest) { destination = dest; }
  	
 		deque<Twaypoint*> getWaypoints() const {return waypoints;}
@@ -65,9 +69,6 @@ namespace Ped {
 		// The agent's desired next position
 		int desiredPositionX;
 		int desiredPositionY;
-
-		// The current destination (may require several steps to reach)
-		Twaypoint* destination;	
 
 		// The last destination
 		Twaypoint* lastDestination;
