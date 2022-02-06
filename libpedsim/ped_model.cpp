@@ -140,32 +140,32 @@ void Ped::Model::tick()
 			t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
 			t5 = _mm_load_ps(&destRarray[i]);
 			reached = _mm_cmpgt_ps(t5, t4);				
-		
-			// Set the bit mask and get the indices of set bits in the mask
-			int mask = _mm_movemask_ps(reached);
-			for (int j = 3; j >= 0; j--) {
-				int c = mask & 1;
-				if (c == 1) {
-					agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
-					Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
-					destXarray[i+j] = nextDest->getx();
-					destYarray[i+j] = nextDest->gety();
-					destRarray[i+j] = nextDest->getr();
-					agents[i+j]->getWaypoints().pop_front();
-				}
-				mask >>= 1;
-			}	
+			
 			// desiredPositionX = (int)round(x + diffX/len);
 			// desiredPositionY = (int)round(y + diffY/len);
 			// Calculate the desired positions and set them into the x and y arrays
-			t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			_mm_store_ps(&xArray[i],t6);
+			//t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+			//_mm_store_ps(&xArray[i],t6);
 			
-			t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			_mm_store_ps(&yArray[i], t7);
+			//t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+			//_mm_store_ps(&yArray[i], t7);
+			
+			// Set the bit mask and get the indices of set bits in the mask
+			//int mask = _mm_movemask_ps(reached);
+			//for (int j = 3; j >= 0; j--) {
+			//	int c = mask & 1;
+			//	if (c == 1) {
+			//		agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
+			//		Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
+			//		destXarray[i+j] = nextDest->getx();
+			//		destYarray[i+j] = nextDest->gety();
+			//		destRarray[i+j] = nextDest->getr();
+			//		agents[i+j]->getWaypoints().pop_front();
+			//	}
+			//	mask >>= 1;
+			//}		
 		}	
-
-	}	
+	}
 }
 
 ////////////
