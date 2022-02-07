@@ -128,7 +128,7 @@ void Ped::Model::tick()
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
 		
-		for (int i = 0; i < agents.size(); i+=4) {
+		for (int i = 0; i < agents.size()-4; i+=4) {
 			t0 = _mm_load_ps(&xArray[i]);
 			t1 = _mm_load_ps(&destXarray[i]);
 			diffX = _mm_sub_ps(t1, t0); // diffX = destX - agentX
@@ -146,25 +146,27 @@ void Ped::Model::tick()
 			// desiredPositionY = (int)round(y + diffY/len);
 			// Calculate the desired positions and set them into the x and y arrays
 			t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			//_mm_store_ps(&xArray[i],t6);
+			_mm_store_ps(&xArray[i],t6);
 			
 			t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			//_mm_store_ps(&yArray[i], t7);
+			_mm_store_ps(&yArray[i], t7);
 			
 			// Set the bit mask and get the indices of set bits in the mask
-			//int mask = _mm_movemask_ps(reached);
-			//for (int j = 3; j >= 0; j--) {
-			//	int c = mask & 1;
-			//	if (c == 1) {
-			//		agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
-			//		Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
-			//		destXarray[i+j] = nextDest->getx();
-			//		destYarray[i+j] = nextDest->gety();
-			//		destRarray[i+j] = nextDest->getr();
-			//		agents[i+j]->getWaypoints().pop_front();
-			//	}
-			//	mask >>= 1;
-			//}		
+			int mask = _mm_movemask_ps(reached);
+			for (int j = 3; j >= 0; j--) {
+				int c = mask & 1;
+				agents[i+j]->setX(xArray[i+j]);
+				agents[i+j]->setY(yArray[i+j]);
+				if (c == 1) {
+					agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
+					Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
+					destXarray[i+j] = nextDest->getx();
+					destYarray[i+j] = nextDest->gety();
+					destRarray[i+j] = nextDest->getr();
+					agents[i+j]->getWaypoints().pop_front();
+				}
+				mask >>= 1;
+			}		
 		}	
 	}
 }
