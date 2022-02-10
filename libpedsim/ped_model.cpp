@@ -152,21 +152,21 @@ void Ped::Model::tick()
 			_mm_store_ps(&yArray[i], t7);
 			
 			// Set the bit mask and get the indices of set bits in the mask
-			int mask = _mm_movemask_ps(reached);
-			for (int j = 3; j >= 0; j--) {
-				int c = mask & 1;
-				agents[i+j]->setX(xArray[i+j]);
-				agents[i+j]->setY(yArray[i+j]);
-				if (c == 1) {
-					agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
-					Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
-					destXarray[i+j] = nextDest->getx();
-					destYarray[i+j] = nextDest->gety();
-					destRarray[i+j] = nextDest->getr();
-					agents[i+j]->getWaypoints().pop_front();
-				}
-				mask >>= 1;
-			}		
+			// int mask = _mm_movemask_ps(reached);
+			// for (int j = 3; j >= 0; j--) {
+			// 	int c = mask & 1;
+			// 	agents[i+j]->setX(xArray[i+j]);
+			// 	agents[i+j]->setY(yArray[i+j]);
+			// 	if (c == 1) {
+			// 		agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
+			// 		Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
+			// 		destXarray[i+j] = nextDest->getx();
+			// 		destYarray[i+j] = nextDest->gety();
+			// 		destRarray[i+j] = nextDest->getr();
+			// 		agents[i+j]->getWaypoints().pop_front();
+			// 	}
+			// 	mask >>= 1;
+			// }		
 		}	
 	}
 }
