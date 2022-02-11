@@ -54,8 +54,12 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 		__m128 t0, t1, t2, t3, t4, t5;
 
 		for (int i = 0; i < agents.size(); i++) {
-			xArray[i] = agents[i]->getX();
-			yArray[i] = agents[i]->getY();
+			xArray[i] = (float) agents[i]->getX();
+			yArray[i] = (float) agents[i]->getY();
+
+			cout << agents[i]->getX() << ":" << xArray[i] << "\t";
+			agents[i]->reallocate_coordinates((int *) &(xArray[i]), (int *) &(yArray[i]));
+			cout << agents[i]->getX() << ":" << yArray[i] << "\n";
 			
 			agents[i]->destination = agents[i]->getNextDestination();
 			
@@ -64,6 +68,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 			destRarray[i] = agents[i]->destination->getr();
 			
 			destReached[i] = 0;
+			
 		}
 		//_mm_free(xArray);
 		//_mm_free(yArray);
@@ -128,28 +133,46 @@ void Ped::Model::tick()
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
 		
-		for (int i = 0; i < agents.size()-4; i+=4) {
+		for (int i = 0; i < agents.size(); i+=4) {
+			/** 
+			 * TEST BEGIN
+			 **/
+
 			t0 = _mm_load_ps(&xArray[i]);
-			t1 = _mm_load_ps(&destXarray[i]);
-			diffX = _mm_sub_ps(t1, t0); // diffX = destX - agentX
+			cout << i << "  " << xArray[i] << "/" << agents[i]->getX() << "\n";
+			t1 = _mm_set1_ps(0.1);
+			t0 = _mm_add_ps(t0, t1);
+			_mm_store_ps(&xArray[i],t0);
 			
-			t2 = _mm_load_ps(&yArray[i]);
-			t3 = _mm_load_ps(&destYarray[i]);
-			diffY = _mm_sub_ps(t3, t2); // diffY = destY - agentY
+			/**
+			 * TEST END
+			 */
 			
-			// length = sqrt(diffX^2 + diffY^2)
-			t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
-			t5 = _mm_load_ps(&destRarray[i]);
-			reached = _mm_cmpgt_ps(t5, t4);				
+
+			// t0 = _mm_load_ps(&xArray[i]);
+			// t1 = _mm_load_ps(&destXarray[i]);
+			// diffX = _mm_sub_ps(t1, t0); // diffX = destX - agentX
+			
+			// t2 = _mm_load_ps(&yArray[i]);
+			// t3 = _mm_load_ps(&destYarray[i]);
+			// diffY = _mm_sub_ps(t3, t2); // diffY = destY - agentY
+			
+			// // length = sqrt(diffX^2 + diffY^2)
+			// t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
+			// t5 = _mm_load_ps(&destRarray[i]);
+			// reached = _mm_cmpgt_ps(t5, t4);				
 		
-			// desiredPositionX = (int)round(x + diffX/len);
-			// desiredPositionY = (int)round(y + diffY/len);
-			// Calculate the desired positions and set them into the x and y arrays
-			t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			_mm_store_ps(&xArray[i],t6);
+			// // desiredPositionX = (int)round(x + diffX/len);
+			// // desiredPositionY = (int)round(y + diffY/len);
+			// // Calculate the desired positions and set them into the x and y arrays
+			// t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 			
-			t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			_mm_store_ps(&yArray[i], t7);
+			// _mm_store_ps(&xArray[i],t6);
+			
+			// t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+			// _mm_store_ps(&yArray[i], t7);
+
+			// cout << "Agent " << i << ",\t" << xArray[i] << ", " << yArray[i] << ", " << destXarray[i] << "\n";
 			
 			// Set the bit mask and get the indices of set bits in the mask
 			// int mask = _mm_movemask_ps(reached);

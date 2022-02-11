@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <deque>
+#include <cmath>
 
 using namespace std;
 
@@ -28,6 +29,9 @@ namespace Ped {
 	public:
 		Tagent(int posX, int posY);
 		Tagent(double posX, double posY);
+
+		// Reallocate coordinates in Memory
+		void reallocate_coordinates(int* newX, int* newY);
 
 		// Returns the coordinates of the desired position
 		int getDesiredX() const { return desiredPositionX; }
@@ -42,8 +46,8 @@ namespace Ped {
 		void computeNextDesiredPosition();
 
 		// Position of agent defined by x and y
-		int getX() const { return *x; };
-		int getY() const { return *y; };
+		int getX() const { return round(*x); };
+		int getY() const { return round(*y); };
 
 		// Adds a new waypoint to reach for this agent
 		void addWaypoint(Twaypoint* wp);

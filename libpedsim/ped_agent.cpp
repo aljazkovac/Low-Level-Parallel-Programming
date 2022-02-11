@@ -28,6 +28,15 @@ void Ped::Tagent::init(int posX, int posY) {
 	lastDestination = NULL;
 }
 
+void Ped::Tagent::reallocate_coordinates(int* newX, int* newY) {
+	*newX = (float) *x;
+	*newY = (float) *y;
+	free(x);
+	free(y);
+	x = newX;
+	y = newY;
+}
+
 void Ped::Tagent::computeNextDesiredPosition() {
 	destination = getNextDestination();
 	if (destination == NULL) {
