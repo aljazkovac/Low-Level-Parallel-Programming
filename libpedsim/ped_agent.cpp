@@ -29,8 +29,6 @@ void Ped::Tagent::init(int posX, int posY) {
 }
 
 void Ped::Tagent::reallocate_coordinates(int* newX, int* newY) {
-	*newX = (float) *x;
-	*newY = (float) *y;
 	free(x);
 	free(y);
 	x = newX;

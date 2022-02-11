@@ -60,14 +60,14 @@ namespace Ped{
     int number_of_threads;
 
     // Arrays
-    float *xArray;
-    float *yArray;
+    int *xArray;
+    int *yArray;
     
     float *destXarray;
     float *destYarray;
     float *destRarray;
     
-    float *destReached;
+    int *destReached;
     
     // The agents in this scenario
     std::vector<Tagent*> agents;
