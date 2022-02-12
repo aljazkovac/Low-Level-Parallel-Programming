@@ -127,7 +127,7 @@ void Ped::Model::tick()
 		__m128i xint, yint;
 		__m128 xfloat, yfloat;
 		
-		for (int i = 0; i < agents.size(); i+=4) {
+		for (int i = 0; i < agents.size() - 4; i+=4) {
 			
 			// Load integers and convert to floats for processing
 			xint = _mm_load_si128((__m128i*) &xArray[i]);
@@ -167,9 +167,9 @@ void Ped::Model::tick()
 
 				if (c == 1) {
 					Ped::Twaypoint* nextDest = agents[i+j]->getNextDestinationSpecial();
-					destXarray[i+j] = nextDest->getx();
-					destYarray[i+j] = nextDest->gety();
-					destRarray[i+j] = nextDest->getr();
+					destXarray[i+j] = (float) nextDest->getx();
+					destYarray[i+j] = (float) nextDest->gety();
+					destRarray[i+j] = (float) nextDest->getr();
 					agents[i+j]->setDest(nextDest);
 				}
 				mask >>= 1;
