@@ -11,6 +11,8 @@
 
 #include <stdlib.h>
 
+#include <iostream>
+
 Ped::Tagent::Tagent(int posX, int posY) {
 	Ped::Tagent::init(posX, posY);
 }
@@ -80,4 +82,17 @@ Ped::Twaypoint* Ped::Tagent::getNextDestination() {
 	}
 
 	return nextDestination;
+}
+
+Ped::Twaypoint* Ped::Tagent::getNextDestinationSpecial() {
+		Ped::Twaypoint* nextDestination = NULL;
+		while(nextDestination == NULL) {
+
+			if(destination != NULL){
+				waypoints.push_back(destination);
+			}
+			nextDestination = waypoints.front();
+			waypoints.pop_front();
+		}
+		return nextDestination;
 }

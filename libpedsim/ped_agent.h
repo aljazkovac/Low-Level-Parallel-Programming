@@ -53,6 +53,8 @@ namespace Ped {
 		void addWaypoint(Twaypoint* wp);
 
 		Twaypoint* getNextDestination();
+
+		Twaypoint* getNextDestinationSpecial();
 		
 		// The current destination (may require several steps to reach)
 		Twaypoint* destination;	

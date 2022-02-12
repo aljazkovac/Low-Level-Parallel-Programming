@@ -59,22 +59,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 			agents[i]->reallocate_coordinates((int *) &(xArray[i]), (int *) &(yArray[i]));
 			
-			agents[i]->destination = agents[i]->getNextDestination();
+			agents[i]->setDest(agents[i]->getNextDestination());
+			// agents[i]->computeNextDesiredPosition();
 			
-			destXarray[i] = agents[i]->destination->getx();
-			destYarray[i] = agents[i]->destination->gety();
-			destRarray[i] = agents[i]->destination->getr();
-			
+			destXarray[i] = (float) agents[i]->destination->getx();
+			destYarray[i] = (float) agents[i]->destination->gety();
+			destRarray[i] = (float) agents[i]->destination->getr();
+
 			destReached[i] = 0;
 			
 		}
-		//_mm_free(xArray);
-		//_mm_free(yArray);
-		//_mm_free(destXarray);
-		//_mm_free(destYarray);
-		//_mm_free(destRarray);
-		//_mm_free(destReached);
-
 	}
 }
 
@@ -129,74 +123,57 @@ void Ped::Model::tick()
 		}
 	}
 	else if(this->implementation == Ped::SIMD) {
-		__m128i t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
+		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
+		__m128i xint, yint;
+		__m128 xfloat, yfloat;
 		
 		for (int i = 0; i < agents.size(); i+=4) {
-			/** 
-			 * TEST BEGIN
-			 **/
-
-			// t0 = _mm_load_si128((__m128i*) &xArray[i]);
-			// cout << i << "  " << xArray[i] << "/" << agents[i]->getX() << "\n";
-			// t1 = _mm_set1_epi32(1);
-			// t0 = _mm_add_epi32(t0, t1);
-			// _mm_store_si128((__m128i*) &xArray[i], t0);
 			
-			/**
-			 * TEST END
-			 */
-			
-
 			// Load integers and convert to floats for processing
-			// xi = _mm_load_si128((__m128*) (&xArray[i]);
-			// xf = _mm_cvtepi32_ps(t0)
-			// t1 = _mm_load_si128((__m128i*) (&destXarray[i]);
-			// t1 = _mm_cvtepi32_ps(t1)
+			xint = _mm_load_si128((__m128i*) &xArray[i]);
+			t0 = _mm_cvtepi32_ps(xint);
+			yint = _mm_load_si128((__m128i*) &yArray[i]);
+			t2 = _mm_cvtepi32_ps(yint);
 
-			// diffX = _mm_sub_epi32(t1, t0); // diffX = destX - agentX
+			t1 = _mm_load_ps(&destXarray[i]);
+			diffX = _mm_sub_ps(t1, t0); // diffX = destX - agentX
 			
-			// t2 = _mm_load_si128((__m128*) &yArray[i]);
-			// t2 = _mm_cvtepi32_ps(t2)
-			// t3 = _mm_load_si128((__m128i*) &destYarray[i]);
-			// t3 = _mm_cvtepi32_ps(t3)
-			// diffY = _mm_sub_ps(t3, t2); // diffY = destY - agentY
+			t3 = _mm_load_ps(&destYarray[i]);
+			diffY = _mm_sub_ps(t3, t2); // diffY = destY - agentY
 			
-			// // length = sqrt(diffX^2 + diffY^2)
-			// t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
-			// t5 = _mm_load_ps(&destRarray[i]);
-			// t5 = _mm_cvtepi32_ps(t5)
-			// reached = _mm_cmpgt_ps(t5, t4);				
+			// length = sqrt(diffX^2 + diffY^2)
+			t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
+			t5 = _mm_load_ps(&destRarray[i]);
+			reached = _mm_cmpgt_ps(t5, t4);				
 		
-			// // desiredPositionX = (int)round(x + diffX/len);
-			// // desiredPositionY = (int)round(y + diffY/len);
-			// // Calculate the desired positions and set them into the x and y arrays
-			// t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			// t6 = _mm_cvtps_epi32(t6)
+			// desiredPositionX = (int)round(x + diffX/len);
+			// desiredPositionY = (int)round(y + diffY/len);
+			// Calculate the desired positions and set them into the x and y arrays
+			t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 			
-			// _mm_store_ps(&xArray[i],t6);
-			
-			// t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			// t7 = _mm_cvtps_epi32(t7)
-			// _mm_store_ps(&yArray[i], t7);
+			t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 
-			// cout << "Agent " << i << ",\t" << xArray[i] << ", " << yArray[i] << ", " << destXarray[i] << "\n";
+			// Convert and store coordinates
+			xint = _mm_cvtps_epi32(t6);
+			_mm_store_si128((__m128i*) &xArray[i], xint);
+			yint = _mm_cvtps_epi32(t7);
+			_mm_store_si128((__m128i*) &yArray[i], yint);
+
 			
 			// Set the bit mask and get the indices of set bits in the mask
-			// int mask = _mm_movemask_ps(reached);
-			// for (int j = 3; j >= 0; j--) {
-			// 	int c = mask & 1;
-			// 	agents[i+j]->setX(xArray[i+j]);
-			// 	agents[i+j]->setY(yArray[i+j]);
-			// 	if (c == 1) {
-			// 		agents[i+j]->getWaypoints().push_back(agents[i+j]->destination);
-			// 		Ped::Twaypoint* nextDest = agents[i+j]->getWaypoints().front();
-			// 		destXarray[i+j] = nextDest->getx();
-			// 		destYarray[i+j] = nextDest->gety();
-			// 		destRarray[i+j] = nextDest->getr();
-			// 		agents[i+j]->getWaypoints().pop_front();
-			// 	}
-			// 	mask >>= 1;
-			// }		
+			int mask = _mm_movemask_ps(reached);
+			for (int j = 0; j < 4; j++) {
+				int c = mask & 1;
+
+				if (c == 1) {
+					Ped::Twaypoint* nextDest = agents[i+j]->getNextDestinationSpecial();
+					destXarray[i+j] = nextDest->getx();
+					destYarray[i+j] = nextDest->gety();
+					destRarray[i+j] = nextDest->getr();
+					agents[i+j]->setDest(nextDest);
+				}
+				mask >>= 1;
+			}		
 		}	
 	}
 }
