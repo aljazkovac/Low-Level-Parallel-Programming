@@ -1,0 +1,17 @@
+<welcome>
+  <!-- waypoints - define before the agents! -->
+  <waypoint id="w1" x="130" y="130" r="10" />
+  <waypoint id="w2" x="20" y="20" r="10" />
+
+  <!-- conveniently divisible by 8 -->
+  <!-- agents -->
+  <agent x="20" y="20" n="2" dx="10" dy="10">
+    <addwaypoint id="w1" />
+    <addwaypoint id="w2" />
+  </agent>
+
+  <agent x="130" y="130" n="2" dx="10" dy="10">
+    <addwaypoint id="w2" />
+    <addwaypoint id="w1" />
+  </agent>
+</welcome>

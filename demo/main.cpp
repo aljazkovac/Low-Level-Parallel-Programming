@@ -67,6 +67,10 @@ int main(int argc, char*argv[]) {
                                 {
                                         implementation_to_test = Ped::OMP;
                                 }
+				else if (strcmp(&argv[i][0], "SIMD") == 0) 
+                                {
+                                        implementation_to_test = Ped::SIMD;
+                                }
 				else if (strcmp(&argv[i][0], "SEQ") != 0)
 				{
 					cerr << "Unrecognized implementation: \"" << argv[i] << "\". Try one of SEQ | PTHREADS  " << endl;
@@ -95,7 +99,7 @@ int main(int argc, char*argv[]) {
 		// Reading the scenario file and setting up the crowd simulation model
 		Ped::Model model;
 		ParseScenario parser(scenefile);
-		model.setup(parser.getAgents(), parser.getWaypoints(), Ped::SEQ);
+		model.setup(parser.getAgents(), parser.getWaypoints(), implementation_to_test);
 
 		// Default number of steps to simulate. Feel free to change this.
 		const int maxNumberOfStepsToSimulate = 100000;

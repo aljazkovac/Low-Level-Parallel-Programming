@@ -10,6 +10,8 @@
 
 #include <stdlib.h>
 
+#include <iostream>
+
 using namespace std;
 
 PedSimulation::PedSimulation(Ped::Model &model_, MainWindow *window_, bool timing_mode) : model(model_), window(window_), maxSimulationSteps(-1), timingMode(timing_mode)

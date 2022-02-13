@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <deque>
+#include <cmath>
 
 using namespace std;
 
@@ -29,38 +30,51 @@ namespace Ped {
 		Tagent(int posX, int posY);
 		Tagent(double posX, double posY);
 
+		// Reallocate coordinates in Memory
+		void reallocate_coordinates(int* newX, int* newY);
+
 		// Returns the coordinates of the desired position
 		int getDesiredX() const { return desiredPositionX; }
 		int getDesiredY() const { return desiredPositionY; }
 
 		// Sets the agent's position
-		void setX(int newX) { x = newX; }
-		void setY(int newY) { y = newY; }
+		void setX(int newX) { *x = newX; }
+		void setY(int newY) { *y = newY; }
 
 		// Update the position according to get closer
 		// to the current destination
 		void computeNextDesiredPosition();
 
 		// Position of agent defined by x and y
-		int getX() const { return x; };
-		int getY() const { return y; };
+		int getX() const { return round(*x); };
+		int getY() const { return round(*y); };
 
 		// Adds a new waypoint to reach for this agent
 		void addWaypoint(Twaypoint* wp);
+
+		Twaypoint* getNextDestination();
+
+		Twaypoint* getNextDestinationSpecial();
+		
+		// The current destination (may require several steps to reach)
+		Twaypoint* destination;	
+
+	
+		//Twaypoint* getDest() const { return destination; }	  
+		void setDest(Twaypoint* dest) { destination = dest; }
+ 	
+		deque<Twaypoint*> getWaypoints() const {return waypoints;}
 
 	private:
 		Tagent() {};
 
 		// The agent's current position
-		int x;
-		int y;
+		int* x;
+		int* y;
 
 		// The agent's desired next position
 		int desiredPositionX;
 		int desiredPositionY;
-
-		// The current destination (may require several steps to reach)
-		Twaypoint* destination;
 
 		// The last destination
 		Twaypoint* lastDestination;
@@ -72,7 +86,7 @@ namespace Ped {
 		void init(int posX, int posY);
 
 		// Returns the next destination to visit
-		Twaypoint* getNextDestination();
+		
 	};
 }
 
