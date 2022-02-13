@@ -59,7 +59,7 @@ namespace Ped{
     // Denotes the number of threads to use in PTHREADS modes
     int number_of_threads;
 
-    // Arrays
+    // Arrays SIMD
     int *xArray;
     int *yArray;
     
@@ -77,6 +77,10 @@ namespace Ped{
 		
     // Moves an agent towards its next position
     void move(Ped::Tagent *agent);
+
+    //--------------- CUDA -----------------
+    int NUM_BLOCKS;
+    int BLOCK_WIDTH;
 
     ////////////
     /// Everything below here won't be relevant until Assignment 3

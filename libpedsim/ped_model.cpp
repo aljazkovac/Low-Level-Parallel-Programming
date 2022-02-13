@@ -72,6 +72,11 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 			
 		}
 	}
+
+	if (this->implementation == Ped::CUDA) {
+	  NUM_BLOCKS = 1;
+	  BLOCK_WIDTH = 256;
+	}
 }
 
 void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
@@ -83,6 +88,11 @@ void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
 		agents[i]->setX(agents[i]->getDesiredX());
 		agents[i]->setY(agents[i]->getDesiredY());
 	}
+}
+
+// CUDA Kernel
+__global__ void hello() {
+  printf("Thread: %d\n", threadIdx.x);
 }
 
 void Ped::Model::tick()
@@ -177,6 +187,10 @@ void Ped::Model::tick()
 				mask >>= 1;
 			}		
 		}	
+	}
+	else if (this->implementation == Ped::CUDA) {
+	  hello<<<NUM_BLOCKS, BLOCK_WIDTH>>>();
+	  cudaDeviceSynchronize();
 	}
 }
 
