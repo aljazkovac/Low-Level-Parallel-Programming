@@ -55,8 +55,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 		__m128 t0, t1, t2, t3, t4, t5;
 
-		cout << agents.size();
-
 		for (int i = 0; i < agents.size(); i++) {
 			xArray[i] =  agents[i]->getX();
 			yArray[i] =  agents[i]->getY();
