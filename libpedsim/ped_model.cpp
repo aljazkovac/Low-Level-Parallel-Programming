@@ -42,16 +42,20 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	
 
 	if (this->implementation == Ped::SIMD) {
-		xArray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
-		yArray = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
+		// Include padding in vectors so they are divisible by 4
+		int vector_size = agents.size() + agents.size() % 4;
+		xArray = (int *) _mm_malloc(vector_size * sizeof(int), 16);
+		yArray = (int *) _mm_malloc(vector_size * sizeof(int), 16);
 
-		destXarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
-		destYarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
-		destRarray = (float *) _mm_malloc(agents.size() * sizeof(float), 16);
+		destXarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
+		destYarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
+		destRarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
 
-		destReached = (int *) _mm_malloc(agents.size() * sizeof(int), 16);
+		destReached = (int *) _mm_malloc(vector_size * sizeof(int), 16);
 
 		__m128 t0, t1, t2, t3, t4, t5;
+
+		cout << agents.size();
 
 		for (int i = 0; i < agents.size(); i++) {
 			xArray[i] =  agents[i]->getX();
@@ -127,7 +131,7 @@ void Ped::Model::tick()
 		__m128i xint, yint;
 		__m128 xfloat, yfloat;
 		
-		for (int i = 0; i < agents.size() - 4; i+=4) {
+		for (int i = 0; i < agents.size(); i+=4) {
 			
 			// Load integers and convert to floats for processing
 			xint = _mm_load_si128((__m128i*) &xArray[i]);
@@ -165,7 +169,7 @@ void Ped::Model::tick()
 			for (int j = 0; j < 4; j++) {
 				int c = mask & 1;
 
-				if (c == 1) {
+				if (c == 1 && (i+j) < agents.size()) {
 					Ped::Twaypoint* nextDest = agents[i+j]->getNextDestinationSpecial();
 					destXarray[i+j] = (float) nextDest->getx();
 					destYarray[i+j] = (float) nextDest->gety();
