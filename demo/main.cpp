@@ -174,8 +174,8 @@ int main(int argc, char*argv[]) {
 		
 	}
 
-	cout << "Done" << endl;
-	cout << "Type Enter to quit.." << endl;
-	getchar(); // Wait for any key. Windows convenience...
+	// cout << "Done" << endl;
+	// cout << "Type Enter to quit.." << endl;
+	// getchar(); // Wait for any key. Windows convenience...
 	return retval;
 }
