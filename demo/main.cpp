@@ -28,6 +28,8 @@
 #pragma comment(lib, "libpedsim.lib")
 
 #include <stdlib.h>
+#include <emmintrin.h>
+#include <smmintrin.h>
 
 int main(int argc, char*argv[]) {
 	bool timing_mode = 0;
@@ -144,7 +146,6 @@ int main(int argc, char*argv[]) {
 			}
 			std::cout << "\n\nSpeedup: " << fps_target / fps_seq << std::endl;
 			
-			
 
 		}
 		// Graphics version
@@ -168,14 +169,19 @@ int main(int argc, char*argv[]) {
 			cout << "Time: " << duration.count() << " milliseconds, " << fps << " Frames Per Second." << std::endl;
 			
 		}
+	
+	_mm_free(model.xArray);
+	_mm_free(model.yArray);
+	_mm_free(model.destXarray);
+	_mm_free(model.destYarray);
+	_mm_free(model.destRarray);	
 
-		
 
-		
 	}
+
 
 	cout << "Done" << endl;
 	cout << "Type Enter to quit.." << endl;
-	getchar(); // Wait for any key. Windows convenience...
+	getchar(); // Wait for any key. Windows convenience...		
 	return retval;
 }

@@ -44,14 +44,12 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	if (this->implementation == Ped::SIMD) {
 		// Include padding in vectors so they are divisible by 4
 		int vector_size = agents.size() + agents.size() % 4;
-		xArray = (int *) _mm_malloc(vector_size * sizeof(int), 16);
-		yArray = (int *) _mm_malloc(vector_size * sizeof(int), 16);
-
-		destXarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
-		destYarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
-		destRarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
-
-		destReached = (int *) _mm_malloc(vector_size * sizeof(int), 16);
+		this->xArray = (int *) _mm_malloc(vector_size * sizeof(int), 16);
+		this->yArray = (int *) _mm_malloc(vector_size * sizeof(int), 16);
+		this->destXarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
+		this->destYarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
+		this->destRarray = (float *) _mm_malloc(vector_size * sizeof(float), 16);
+		this->destReached = (int *) _mm_malloc(vector_size * sizeof(int), 16);
 
 		__m128 t0, t1, t2, t3, t4, t5;
 

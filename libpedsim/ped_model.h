@@ -28,7 +28,7 @@ namespace Ped{
   class Model
   {
   public:
-
+    
     // Sets everything up
     void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation, int number_of_threads = 2);		
 	
@@ -48,7 +48,15 @@ namespace Ped{
     // Returns the heatmap visualizing the density of agents
     int const * const * getHeatmap() const { return blurred_heatmap; };
     int getHeatmapSize() const;
-
+  
+    // Arrays
+    int * xArray;
+    int * yArray;
+    float * destXarray;
+    float * destYarray;
+    float * destRarray;
+    int * destReached;
+   
   private:
 
     // Denotes which implementation (sequential, parallel implementations..)
@@ -59,16 +67,7 @@ namespace Ped{
     // Denotes the number of threads to use in PTHREADS modes
     int number_of_threads;
 
-    // Arrays
-    int *xArray;
-    int *yArray;
-    
-    float *destXarray;
-    float *destYarray;
-    float *destRarray;
-    
-    int *destReached;
-    
+  
     // The agents in this scenario
     std::vector<Tagent*> agents;
 
