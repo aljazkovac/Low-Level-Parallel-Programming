@@ -8,10 +8,11 @@
 #include "ped_model.h"
 #include "ped_waypoint.h"
 #include "ped_model.h"
+#include "cuda_testkernel.h"
+#include "cuda_tick.h"
 #include <iostream>
 #include <stack>
 #include <algorithm>
-#include "cuda_testkernel.h"
 #include <device_launch_parameters.h>
 #include <omp.h>
 #include <thread>
