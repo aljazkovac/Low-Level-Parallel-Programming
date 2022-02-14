@@ -38,3 +38,13 @@ hugeScenario.xml
 scenario_box.xml
 36
 29
+CUDA
+scenario.xml
+12048
+12074
+hugeScenario.xml
+16079
+16024
+scenario_box.xml
+11225
+11207
