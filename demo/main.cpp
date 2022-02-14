@@ -74,7 +74,7 @@ int main(int argc, char*argv[]) {
 				else if (strcmp(&argv[i][0], "CUDA") == 0) 
                                 {
                                         implementation_to_test = Ped::CUDA;
-                                
+                                }
 				else if (strcmp(&argv[i][0], "SEQ") != 0)
 				{
 					cerr << "Unrecognized implementation: \"" << argv[i] << "\". Try one of SEQ | PTHREADS  " << endl;
@@ -179,7 +179,5 @@ int main(int argc, char*argv[]) {
 	}
 
 	cout << "Done" << endl;
-	cout << "Type Enter to quit.." << endl;
-	getchar(); // Wait for any key. Windows convenience...
 	return retval;
 }

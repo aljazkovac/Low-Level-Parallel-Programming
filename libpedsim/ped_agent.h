@@ -60,7 +60,7 @@ namespace Ped {
 		Twaypoint* destination;	
 
 	
-		//Twaypoint* getDest() const { return destination; }	  
+		Twaypoint* getDest() const { return destination; }	  
 		void setDest(Twaypoint* dest) { destination = dest; }
  	
 		deque<Twaypoint*> getWaypoints() const {return waypoints;}

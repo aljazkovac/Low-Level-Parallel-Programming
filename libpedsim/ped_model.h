@@ -59,7 +59,7 @@ namespace Ped{
     // Denotes the number of threads to use in PTHREADS modes
     int number_of_threads;
 
-    // Arrays SIMD
+    // Arrays
     int *xArray;
     int *yArray;
     
@@ -80,7 +80,7 @@ namespace Ped{
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
-    int BLOCK_WIDTH;
+    int THREADS_PER_BLOCK;
 
     ////////////
     /// Everything below here won't be relevant until Assignment 3
