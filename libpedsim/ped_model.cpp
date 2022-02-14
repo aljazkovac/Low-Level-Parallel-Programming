@@ -8,16 +8,19 @@
 #include "ped_model.h"
 #include "ped_waypoint.h"
 #include "ped_model.h"
+#include "cuda_testkernel.h"
+#include "cuda_tick.h"
 #include <iostream>
 #include <stack>
 #include <algorithm>
-#include "cuda_testkernel.h"
+#include <device_launch_parameters.h>
 #include <omp.h>
 #include <thread>
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include <stdlib.h>
 #include <iostream>
+#include <unistd.h>
 using namespace std;
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
@@ -71,6 +74,37 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 			destReached[i] = 0;
 			
 		}
+	}
+
+	if (this->implementation == Ped::CUDA) {
+	  THREADS_PER_BLOCK = 64;
+	  int array_size = agents.size() + THREADS_PER_BLOCK - agents.size() % THREADS_PER_BLOCK;
+	  NUM_BLOCKS = array_size/THREADS_PER_BLOCK;
+	  
+	  xArray = (int *) malloc(array_size * sizeof(int));
+	  yArray = (int *) malloc(array_size * sizeof(int));
+	  
+	  destXarray = (float *) malloc(array_size * sizeof(float));
+	  destYarray = (float *) malloc(array_size * sizeof(float));
+	  destRarray = (float *) malloc(array_size * sizeof(float));
+	  
+	  destReached = (int *) malloc(array_size * sizeof(int));
+
+	  for (int i = 0; i < agents.size(); i++) {
+	    xArray[i] =  agents[i]->getX();
+	    yArray[i] =  agents[i]->getY();
+
+	    agents[i]->reallocate_coordinates((int *) &(xArray[i]), (int *) &(yArray[i]));
+			
+	    agents[i]->setDest(agents[i]->getNextDestination());
+	    // agents[i]->computeNextDesiredPosition();
+			
+	    destXarray[i] = (float) agents[i]->destination->getx();
+	    destYarray[i] = (float) agents[i]->destination->gety();
+	    destRarray[i] = (float) agents[i]->destination->getr();
+
+	    destReached[i] = 0;
+	  }
 	}
 }
 
@@ -128,9 +162,9 @@ void Ped::Model::tick()
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
 		__m128i xint, yint;
 		__m128 xfloat, yfloat;
-		
+
 		for (int i = 0; i < agents.size(); i+=4) {
-			
+
 			// Load integers and convert to floats for processing
 			xint = _mm_load_si128((__m128i*) &xArray[i]);
 			t0 = _mm_cvtepi32_ps(xint);
@@ -145,6 +179,7 @@ void Ped::Model::tick()
 			
 			// length = sqrt(diffX^2 + diffY^2)
 			t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
+			// reached = length < destR 
 			t5 = _mm_load_ps(&destRarray[i]);
 			reached = _mm_cmpgt_ps(t5, t4);				
 		
@@ -177,6 +212,20 @@ void Ped::Model::tick()
 				mask >>= 1;
 			}		
 		}	
+	}
+	else if (this->implementation == Ped::CUDA) {
+	  tickCuda(xArray, yArray, destXarray, destYarray, destRarray, destReached, NUM_BLOCKS, THREADS_PER_BLOCK);
+	  
+	  for (int i = 0; i < agents.size(); i++) {
+	    if (destReached[i]) {
+	      Ped::Twaypoint* nextDest = agents[i]->getNextDestinationSpecial();
+	      destXarray[i] = (float) nextDest->getx();
+	      destYarray[i] = (float) nextDest->gety();
+	      destRarray[i] = (float) nextDest->getr();
+	      agents[i]->setDest(nextDest);
+	    }
+	  }
+
 	}
 }
 

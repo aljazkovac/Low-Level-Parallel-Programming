@@ -78,6 +78,10 @@ namespace Ped{
     // Moves an agent towards its next position
     void move(Ped::Tagent *agent);
 
+    //--------------- CUDA -----------------
+    int NUM_BLOCKS;
+    int THREADS_PER_BLOCK;
+
     ////////////
     /// Everything below here won't be relevant until Assignment 3
     ///////////////////////////////////////////////
