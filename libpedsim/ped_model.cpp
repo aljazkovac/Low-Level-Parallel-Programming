@@ -42,11 +42,32 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
-
 	
 	if (this->implementation == Ped::OMP) {
 	  for (int i = 0; i < 4; i++) {
 	    agent_regions.push_back({});
+	  }
+
+	  int maxX = 160;
+	  int maxY = 120;
+	  
+	  for (const auto& agent: agents) {
+	    if (agent->getX() <= maxX/2) {
+	      if (agent->getY() <= maxY/2) {
+		agent_regions[0].push_back(agent);
+	      }
+	      else {
+		agent_regions[2].push_back(agent);
+	      }
+	    }
+	    else {
+	      if (agent->getY() <= maxY/2) {
+		agent_regions[1].push_back(agent);
+	      }
+	      else {
+		agent_regions[3].push_back(agent);
+	      }
+	    }
 	  }
 	}
 
@@ -158,28 +179,6 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
-	  int maxX = 160;
-	  int maxY = 120;
-	  
-	  for (const auto& agent: agents) {
-	    if (agent->getX() <= maxX/2) {
-	      if (agent->getY() <= maxY/2) {
-		agent_regions[0].push_back(agent);
-	      }
-	      else {
-		agent_regions[2].push_back(agent);
-	      }
-	    }
-	    else {
-	      if (agent->getY() <= maxY/2) {
-		agent_regions[1].push_back(agent);
-	      }
-	      else {
-		agent_regions[3].push_back(agent);
-	      }
-	    }
-	  }
-
 	  
 	  omp_set_num_threads(this->number_of_threads);
           #pragma omp parallel for
@@ -187,6 +186,7 @@ void Ped::Model::tick()
 	    for (const auto& agent: agent_region) {
 	      agent->computeNextDesiredPosition();
 	      move(agent);
+	      // Check if agent wants to move across region boundary
 	    }
 	  }
 	}
