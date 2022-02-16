@@ -42,7 +42,13 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
+
 	
+	if (this->implementation == Ped::OMP) {
+	  for (int i = 0; i < 4; i++) {
+	    agent_regions.push_back({});
+	  }
+	}
 
 	if (this->implementation == Ped::SIMD) {
 		// Include padding in vectors so they are divisible by 4
@@ -154,10 +160,6 @@ void Ped::Model::tick()
 	else if (this->implementation == Ped::OMP) {
 	  int maxX = 160;
 	  int maxY = 120;
-	  std::vector<std::vector<Ped::Tagent*>> agent_regions;
-	  for (int i = 0; i < 4; i++) {
-	    agent_regions.push_back({});
-	  }
 	  
 	  for (const auto& agent: agents) {
 	    if (agent->getX() <= maxX/2) {
