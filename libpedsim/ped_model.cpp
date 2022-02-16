@@ -127,6 +127,7 @@ void Ped::Model::tick()
 	// 3. Set its position to the calculated desired one
 	//
 	if (this->implementation == Ped::SEQ) {
+
 		for (const auto& agent: agents) {
 			agent->computeNextDesiredPosition();
 			//agent->setX(agent->getDesiredX());
@@ -151,13 +152,41 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
-		omp_set_num_threads(this->number_of_threads);
-		#pragma omp parallel for
-		for (const auto& agent: agents) {
-			agent->computeNextDesiredPosition();
-			agent->setX(agent->getDesiredX());
-			agent->setY(agent->getDesiredY());
-		}
+	  int maxX = 160;
+	  int maxY = 120;
+	  std::vector<std::vector<Ped::Tagent*>> agent_regions;
+	  for (int i = 0; i < 4; i++) {
+	    agent_regions.push_back({});
+	  }
+	  
+	  for (const auto& agent: agents) {
+	    if (agent->getX() <= maxX/2) {
+	      if (agent->getY() <= maxY/2) {
+		agent_regions[0].push_back(agent);
+	      }
+	      else {
+		agent_regions[2].push_back(agent);
+	      }
+	    }
+	    else {
+	      if (agent->getY() <= maxY/2) {
+		agent_regions[1].push_back(agent);
+	      }
+	      else {
+		agent_regions[3].push_back(agent);
+	      }
+	    }
+	  }
+
+	  
+	  omp_set_num_threads(this->number_of_threads);
+          #pragma omp parallel for
+	  for (const auto& agent_region: agent_regions) {
+	    for (const auto& agent: agent_region) {
+	      agent->computeNextDesiredPosition();
+	      move(agent);
+	    }
+	  }
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
