@@ -129,8 +129,9 @@ void Ped::Model::tick()
 	if (this->implementation == Ped::SEQ) {
 		for (const auto& agent: agents) {
 			agent->computeNextDesiredPosition();
-			agent->setX(agent->getDesiredX());
-			agent->setY(agent->getDesiredY());
+			//agent->setX(agent->getDesiredX());
+			//agent->setY(agent->getDesiredY());
+			move(agent);
 		}
 	}
 	else if (this->implementation == Ped::CTHREADS) {
