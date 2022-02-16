@@ -11,7 +11,7 @@ with open("results2.txt", 'r') as f:
     
     lines = f.readlines()
 
-    for _ in range(4):
+    for _ in range(5):
         labels.append(lines.pop(0).strip().split(" ")[0])
 
         lines.pop(0)
