@@ -67,18 +67,33 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 		// plane vector with vectors of regions  
 
 		int count = 0;	
+
+		// Define the boundary of a region as the x value of the rightmost agent
+		std::vector<int> xBounds;
+
 		for (std::size_t i = 0; i < nr_regions; ++i) {
 			std::vector<Ped::Tagent*> region;
+			xBounds.push_back(0);
 			for (std::size_t j = 0; j < agents_per_region; ++j) {
 				if (count < agents.size()) {
 					region.push_back(agents[count]);
+					xBounds[i] = agents[count]->getX();
 					count ++;
 				}
 			}
+
+			// DEBUG
 			cout << "Region size: " << region.size() << "\n";
 			plane.push_back(region);
 		}
+
+		//DEBUG BEGIN
+		for (const auto x : xBounds) {
+			cout << x << ",";
+		}
+		cout << "\n";
 		cout << "Plane size: " << plane.size() << "\n";
+		// DEBUG END
 		
 	}
 
