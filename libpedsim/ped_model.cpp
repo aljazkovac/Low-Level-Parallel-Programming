@@ -191,15 +191,15 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::OMP) {
 		
-		//omp_set_num_threads(plane.size());
-  		//#pragma omp parallel for
-		  //for (const auto& region: plane) {
-			  //for (const auto& agent: region) {
-				  //agent->computeNextDesiredPosition();
-				  //move(agent);
+		omp_set_num_threads(plane.size());
+  		#pragma omp parallel for
+		  for (const auto& region: plane) {
+			  for (const auto& agent: region) {
+				  agent->computeNextDesiredPosition();
+				  move(agent);
 				  // Check if agent wants to move across region boundary
-	    //}
-	  //}
+	    }
+	  }
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
