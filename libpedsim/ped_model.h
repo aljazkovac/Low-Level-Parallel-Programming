@@ -78,6 +78,9 @@ namespace Ped{
     // Moves an agent towards its next position
     void move(Ped::Tagent *agent);
 
+    // The plane for Assignment 3
+	  std::vector<std::vector<Ped::Tagent*>> plane;
+
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
     int THREADS_PER_BLOCK;
@@ -89,7 +92,6 @@ namespace Ped{
     // Returns the set of neighboring agents for the specified position
     set<const Ped::Tagent*> getNeighbors(int x, int y, int dist) const;
 
-    std::vector<std::vector<Ped::Tagent*>> agent_regions;
 
     ////////////
     /// Everything below here won't be relevant until Assignment 4

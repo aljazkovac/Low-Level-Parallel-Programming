@@ -42,7 +42,9 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
-	
+
+	// A comparator operator that enables the sorting of agents according
+	// to their x coordinates	
 	struct less_than_key {
 		inline bool operator() (const Ped::Tagent* agent1, const Ped::Tagent* agent2) {
 			return (agent1->getX() < agent2->getX());
@@ -50,11 +52,34 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 		};
 	
 	if (this->implementation == Ped::OMP) {
-	 // Sort the agent vector according to the agents' x coordinates
-	 std::sort(agents.begin(), agents.end(), less_than_key());
-	 for (const auto& agent: agents) {
-			cout << agent->getX() << " -- ";
+		// Choose max percentage of agents allowed per region
+		float max_per_region = 0.25;
+		// Determine the nr. of agents per region
+		float agents_per_region = std::floor(agents.size() * max_per_region);
+		std::cout << "Max per region: " << max_per_region << "\n" << "Agents per region: " << agents_per_region << "\n" << "Nr of agents: " << agents.size() << "\n";
+		// Determine the nr. of regions
+		float nr_regions = std::ceil(agents.size() / agents_per_region);
+		std::cout << "Nr of regions: " << nr_regions << "\n";
+		// Sort the agent vector according to the agents' x coordinates
+	 	std::sort(agents.begin(), agents.end(), less_than_key());
+	 	
+		// Populate the vectors of regions with agents and the 
+		// plane vector with vectors of regions  
+
+		int count = 0;	
+		for (std::size_t i = 0; i < nr_regions; ++i) {
+			std::vector<Ped::Tagent*> region;
+			for (std::size_t j = 0; j < agents_per_region; ++j) {
+				if (count < agents.size()) {
+					region.push_back(agents[count]);
+					count ++;
+				}
 			}
+			cout << "Region size: " << region.size() << "\n";
+			plane.push_back(region);
+		}
+		cout << "Plane size: " << plane.size() << "\n";
+		
 	}
 
 	if (this->implementation == Ped::SIMD) {
@@ -166,10 +191,10 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::OMP) {
 		
-		//omp_set_num_threads(this->number_of_threads);
+		//omp_set_num_threads(plane.size());
   		//#pragma omp parallel for
-		  //for (const auto& agent_region: agent_regions) {
-			  //for (const auto& agent: agent_region) {
+		  //for (const auto& region: plane) {
+			  //for (const auto& agent: region) {
 				  //agent->computeNextDesiredPosition();
 				  //move(agent);
 				  // Check if agent wants to move across region boundary
