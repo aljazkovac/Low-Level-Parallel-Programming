@@ -59,11 +59,15 @@ namespace Ped {
 		// The current destination (may require several steps to reach)
 		Twaypoint* destination;	
 
-	
 		Twaypoint* getDest() const { return destination; }	  
 		void setDest(Twaypoint* dest) { destination = dest; }
  	
 		deque<Twaypoint*> getWaypoints() const {return waypoints;}
+
+		bool operator < (const Ped::Tagent& agent) const {
+			return (*x < agent.getX());
+		}
+		
 
 	private:
 		Tagent() {};

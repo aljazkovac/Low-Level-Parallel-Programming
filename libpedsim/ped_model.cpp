@@ -43,32 +43,18 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 	
+	struct less_than_key {
+		inline bool operator() (const Ped::Tagent* agent1, const Ped::Tagent* agent2) {
+			return (agent1->getX() < agent2->getX());
+			}
+		};
+	
 	if (this->implementation == Ped::OMP) {
-	  for (int i = 0; i < 4; i++) {
-	    agent_regions.push_back({});
-	  }
-
-	  int maxX = 160;
-	  int maxY = 120;
-	  
-	  for (const auto& agent: agents) {
-	    if (agent->getX() <= maxX/2) {
-	      if (agent->getY() <= maxY/2) {
-		agent_regions[0].push_back(agent);
-	      }
-	      else {
-		agent_regions[2].push_back(agent);
-	      }
-	    }
-	    else {
-	      if (agent->getY() <= maxY/2) {
-		agent_regions[1].push_back(agent);
-	      }
-	      else {
-		agent_regions[3].push_back(agent);
-	      }
-	    }
-	  }
+	 // Sort the agent vector according to the agents' x coordinates
+	 std::sort(agents.begin(), agents.end(), less_than_key());
+	 for (const auto& agent: agents) {
+			cout << agent->getX() << " -- ";
+			}
 	}
 
 	if (this->implementation == Ped::SIMD) {
@@ -179,16 +165,16 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
-	  
-	  omp_set_num_threads(this->number_of_threads);
-          #pragma omp parallel for
-	  for (const auto& agent_region: agent_regions) {
-	    for (const auto& agent: agent_region) {
-	      agent->computeNextDesiredPosition();
-	      move(agent);
-	      // Check if agent wants to move across region boundary
-	    }
-	  }
+		
+		//omp_set_num_threads(this->number_of_threads);
+  		//#pragma omp parallel for
+		  //for (const auto& agent_region: agent_regions) {
+			  //for (const auto& agent: agent_region) {
+				  //agent->computeNextDesiredPosition();
+				  //move(agent);
+				  // Check if agent wants to move across region boundary
+	    //}
+	  //}
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
