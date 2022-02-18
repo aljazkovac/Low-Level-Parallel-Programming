@@ -34,7 +34,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Set up destinations
 	destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
 
-	// Sets the chosen implemenation. Standard in the given code is SEQ
+	// Set the chosen implemenation. Standard in the given code is SEQ
 	this->implementation = implementation;
 
 	// Set number of threads to default value
@@ -43,44 +43,45 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 
-	// A comparator operator that enables the sorting of agents according
-	// to their x coordinates	
-	struct less_than_key {
-		inline bool operator() (const Ped::Tagent* agent1, const Ped::Tagent* agent2) {
-			return (agent1->getX() < agent2->getX());
-			}
-		};
+	if (this->implementation == Ped::SEQ) {
+		// Determine the region coordinates (4 regions)
+		int x0 = 0;
+		int x1 = 40;
+		int x2 = 80;
+		int x3 = 120;
+		int x4 = 160;
 	
-	if (this->implementation == Ped::OMP) {
-		// Choose max percentage of agents allowed per region
-		float max_per_region = 0.25;
-		// Determine the nr. of agents per region
-		float agents_per_region = std::floor(agents.size() * max_per_region);
-		std::cout << "Max per region: " << max_per_region << "\n" << "Agents per region: " << agents_per_region << "\n" << "Nr of agents: " << agents.size() << "\n";
-		// Determine the nr. of regions
-		float nr_regions = std::ceil(agents.size() / agents_per_region);
-		std::cout << "Nr of regions: " << nr_regions << "\n";
-		// Sort the agent vector according to the agents' x coordinates
-	 	std::sort(agents.begin(), agents.end(), less_than_key());
-	 	
-		// Populate the vectors of regions with agents and the 
-		// plane vector with vectors of regions  
-
-		int count = 0;	
-		for (std::size_t i = 0; i < nr_regions; ++i) {
-			std::vector<Ped::Tagent*> region;
-			for (std::size_t j = 0; j < agents_per_region; ++j) {
-				if (count < agents.size()) {
-					region.push_back(agents[count]);
-					count ++;
-				}
-			}
-			cout << "Region size: " << region.size() << "\n";
-			plane.push_back(region);
-		}
-		cout << "Plane size: " << plane.size() << "\n";
-		
+	// Initialize the plane vector and the regions vectors
+	for (std::size_t i = 0; i < 4; ++i) {
+		std::vector<Ped::Tagent*> region;
+		plane.push_back(region);
 	}
+
+	// Populate the vectors of regions with agents and the 
+	// plane vector with vectors of regions  
+		for (const auto& agent: agents) {
+			if (agent->getX() >= x0 && agent->getX() < x1) {
+				plane[0].push_back(agent);
+			}
+			else if (agent->getX() >= x1 && agent->getX() < x2) {
+				plane[1].push_back(agent);
+			}
+			else if (agent->getX() >= x2 && agent->getX() < x3) {
+				plane[2].push_back(agent);
+			}
+			else if (agent->getX() >= x3 && agent->getX() < x4) {
+				plane[3].push_back(agent);
+			}
+		}
+
+	// Check if the plane is populated correctly:
+	cout << "Nr. of agents: " << agents.size() << "\n";
+	cout << "Plane size: " << plane.size() << "\n";
+	for (std::size_t i = 0; i < plane.size(); ++i) {
+		cout << "Region size: " << plane[i].size() << "\n";
+	}
+
+}
 
 	if (this->implementation == Ped::SIMD) {
 		// Include padding in vectors so they are divisible by 4
@@ -192,14 +193,13 @@ void Ped::Model::tick()
 	else if (this->implementation == Ped::OMP) {
 		
 		omp_set_num_threads(plane.size());
-  		#pragma omp parallel for
-		  for (const auto& region: plane) {
-			  for (const auto& agent: region) {
-				  agent->computeNextDesiredPosition();
-				  move(agent);
-				  // Check if agent wants to move across region boundary
-	    }
-	  }
+		#pragma omp parallel for
+		for (const auto& agent: agents) {
+			agent->computeNextDesiredPosition();
+			//agent->setX(agent->getDesiredX());
+			//agent->setY(agent->getDesiredY());
+			move_atomic(agent);
+		}
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
@@ -276,6 +276,56 @@ void Ped::Model::tick()
 /// Everything below here relevant for Assignment 3.
 /// Don't use this for Assignment 1!
 ///////////////////////////////////////////////
+void Ped::Model::move_atomic(Ped::Tagent *agent)
+{
+	// Search for neighboring agents
+	set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
+
+	// Retrieve their positions
+	std::vector<std::pair<int, int> > takenPositions;
+	for (std::set<const Ped::Tagent*>::iterator neighborIt = neighbors.begin(); neighborIt != neighbors.end(); ++neighborIt) {
+		std::pair<int, int> position((*neighborIt)->getX(), (*neighborIt)->getY());
+		takenPositions.push_back(position);
+	}
+
+	// Compute the three alternative positions that would bring the agent
+	// closer to his desiredPosition, starting with the desiredPosition itself
+	std::vector<std::pair<int, int> > prioritizedAlternatives;
+	std::pair<int, int> pDesired(agent->getDesiredX(), agent->getDesiredY());
+	prioritizedAlternatives.push_back(pDesired);
+
+	int diffX = pDesired.first - agent->getX();
+	int diffY = pDesired.second - agent->getY();
+	std::pair<int, int> p1, p2;
+	if (diffX == 0 || diffY == 0)
+	{
+		// Agent wants to walk straight to North, South, West or East
+		p1 = std::make_pair(pDesired.first + diffY, pDesired.second + diffX);
+		p2 = std::make_pair(pDesired.first - diffY, pDesired.second - diffX);
+	}
+	else {
+		// Agent wants to walk diagonally
+		p1 = std::make_pair(pDesired.first, agent->getY());
+		p2 = std::make_pair(agent->getX(), pDesired.second);
+	}
+	prioritizedAlternatives.push_back(p1);
+	prioritizedAlternatives.push_back(p2);
+
+	// Find the first empty alternative position
+	for (std::vector<pair<int, int> >::iterator it = prioritizedAlternatives.begin(); it != prioritizedAlternatives.end(); ++it) {
+
+		// If the current position is not yet taken by any neighbor
+		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
+
+			// Set the agent's position 
+			agent->setX((*it).first);
+			agent->setY((*it).second);
+
+			break;
+		}
+	}
+}
+
 
 // Moves the agent to the next desired position. If already taken, it will
 // be moved to a location close to it.

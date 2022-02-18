@@ -77,6 +77,9 @@ namespace Ped{
 		
     // Moves an agent towards its next position
     void move(Ped::Tagent *agent);
+    
+    // Moves an agent towards its next destination in an atomic way
+    void move_atomic(Ped::Tagent *agent);
 
     // The plane for Assignment 3
 	  std::vector<std::vector<Ped::Tagent*>> plane;
