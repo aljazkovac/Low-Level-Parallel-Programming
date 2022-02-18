@@ -43,7 +43,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 
-	if (this->implementation == Ped::SEQ) {
+	if (this->implementation == Ped::OMP) {
 		// Determine the region coordinates (4 regions)
 		int x0 = 0;
 		int x1 = 40;
