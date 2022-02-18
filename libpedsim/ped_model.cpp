@@ -377,6 +377,9 @@ void Ped::Model::move(Ped::Tagent *agent)
 			break;
 		}
 	}
+
+	// TODO: If no empty alternative position can be found, attempt to back off 
+
 }
 
 /// Returns the list of neighbors within dist of the point x/y. This
@@ -391,14 +394,16 @@ set<const Ped::Tagent*> Ped::Model::getNeighbors(int x, int y, int dist) const {
 	// create the output list
 	// ( It would be better to include only the agents close by, but this programmer is lazy.)	
 
+	//return set<const Ped::Tagent*>(agents.begin(), agents.end());
 	set<const Ped::Tagent*> closeby_agents = {};
 
+	// Consider only the agents that are within the given distance
 	for (const auto& agent: agents) {
 		if (agent->getX() < (x + dist) && agent->getX() > (x - dist) && agent->getY() < (y + dist) && agent->getY() > (y - dist)) {
 			closeby_agents.insert(agent);
 		}
 	}
-	//return set<const Ped::Tagent*>(agents.begin(), agents.end());
+	
 	return closeby_agents;
 }
 
