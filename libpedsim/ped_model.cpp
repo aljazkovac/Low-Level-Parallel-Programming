@@ -38,7 +38,28 @@ void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
 		else if (agent->getX() >= x3 && agent->getX() <= x4) {
 			plane[3].push_back(agent);
 		}
-	}	
+	}
+
+	// Check if the plane is populated correctly:
+		cout << "Nr. of agents: " << agents.size() << "\n";
+		cout << "Plane size: " << plane.size() << "\n";
+		for (std::size_t i = 0; i < plane.size(); ++i) {
+			cout << "Region size: " << plane[i].size() << "\n";
+		}	
+}
+
+void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
+	for (auto& region: plane) {
+		region.clear();
+	}
+	// Check if the plane is cleared correctly:
+		cout << "Nr. of agents: " << agents.size() << "\n";
+		cout << "Plane size: " << plane.size() << "\n";
+		for (std::size_t i = 0; i < plane.size(); ++i) {
+			cout << "Region size: " << plane[i].size() << "\n";
+		}	
+
+	populate_regions(x0, x1, x2, x3, x4);
 }
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
@@ -62,14 +83,11 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	setupHeatmapSeq();
 
 	if (this->implementation == Ped::OMP) {
-		// Determine the region coordinates (4 regions)
-		// I am basing this on the max coordinates I have seen in the 
-		// hugeScenario
-		int x0 = 0;
-		int x1 = 46;
-		int x2 = 92;
-		int x3 = 138;
-		int x4 = 184;	
+		x0 = 0;
+		x1 = 46;
+		x2 = 92;
+		x3 = 138;
+		x4 = 184;
 
 		// Initialize the plane vector and the regions vectors
 		for (std::size_t i = 0; i < 4; ++i) {
@@ -80,18 +98,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 		// Populate the vectors of regions with agents and the 
 		// plane vector with vectors of regions
 		populate_regions(x0,x1,x2,x3,x4);
-
-		//print the agents' x coordinate
-		for (const auto& agent: agents) {
-			cout << "y = " << agent->getY() << "\n";
-		}
-
-		// Check if the plane is populated correctly:
-		cout << "Nr. of agents: " << agents.size() << "\n";
-		cout << "Plane size: " << plane.size() << "\n";
-		for (std::size_t i = 0; i < plane.size(); ++i) {
-			cout << "Region size: " << plane[i].size() << "\n";
-		}
 }
 
 	if (this->implementation == Ped::SIMD) {
@@ -202,6 +208,8 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
+		
+		recalculate_regions(x0,x1,x2,x3,x4);
 		// Parallellize the outer loop only 	
 		omp_set_num_threads(plane.size());
 		#pragma omp parallel for
@@ -213,6 +221,7 @@ void Ped::Model::tick()
 				move_atomic(agent);
 			}
 		}
+	
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
