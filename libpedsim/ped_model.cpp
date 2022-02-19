@@ -22,7 +22,7 @@
 #include <iostream>
 #include <unistd.h>
 using namespace std;
-// Populate the vectors of regions with agents and the 
+// Populate the vectors of regions with agents and the
 // plane vector with vectors of regions
 void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
 	for (const auto& agent: agents) {
@@ -45,7 +45,7 @@ void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
 		cout << "Plane size: " << plane.size() << "\n";
 		for (std::size_t i = 0; i < plane.size(); ++i) {
 			cout << "Region size: " << plane[i].size() << "\n";
-		}	
+		}
 }
 
 void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
@@ -57,7 +57,7 @@ void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
 		cout << "Plane size: " << plane.size() << "\n";
 		for (std::size_t i = 0; i < plane.size(); ++i) {
 			cout << "Region size: " << plane[i].size() << "\n";
-		}	
+		}
 
 	populate_regions(x0, x1, x2, x3, x4);
 }
@@ -67,7 +67,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Convenience test: does CUDA work on this machine?
 	cuda_test();
 
-	// Set 
+	// Set
 	agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
 
 	// Set up destinations
@@ -82,6 +82,14 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 
+	// A comparator operator that enables the sorting of agents according
+	// to their x coordinates
+	struct less_than_key {
+	  inline bool operator() (const Ped::Tagent* agent1, const Ped::Tagent* agent2) {
+	    return (agent1->getX() < agent2->getX());
+	  }
+	};
+
 	if (this->implementation == Ped::OMP) {
 		x0 = 0;
 		x1 = 46;
@@ -95,10 +103,52 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 			plane.push_back(region);
 		}
 
-		// Populate the vectors of regions with agents and the 
+		// Populate the vectors of regions with agents and the
 		// plane vector with vectors of regions
 		populate_regions(x0,x1,x2,x3,x4);
-}
+
+		// ---------- Dynamic regions ----------------
+
+		// Choose max percentage of agents allowed per region
+		// float max_per_region = 0.25;
+		// // Determine the nr. of agents per region
+		// float agents_per_region = std::floor(agents.size() * max_per_region);
+		// std::cout << "Max per region: " << max_per_region << "\n" << "Agents per region: " << agents_per_region << "\n" << "Nr of agents: " << agents.size() << "\n";
+		// // Determine the nr. of regions
+		// float nr_regions = std::ceil(agents.size() / agents_per_region);
+		// std::cout << "Nr of regions: " << nr_regions << "\n";
+		// // Sort the agent vector according to the agents' x coordinates
+		// std::sort(agents.begin(), agents.end(), less_than_key());
+		// int count = 0;
+
+		// // Define the boundary of a region as the x value of the rightmost agent
+		// std::vector<int> xBounds;
+
+		// for (std::size_t i = 0; i < nr_regions; ++i) {
+		//	std::vector<Ped::Tagent*> region;
+		//	xBounds.push_back(0);
+		//	for (std::size_t j = 0; j < agents_per_region; ++j) {
+		//		if (count < agents.size()) {
+		//			region.push_back(agents[count]);
+		//			xBounds[i] = agents[count]->getX();
+		//			count ++;
+		//		}
+		//	}
+
+		//	// DEBUG
+		//	cout << "Region size: " << region.size() << "\n";
+		//	plane.push_back(region);
+		// }
+
+		// //DEBUG BEGIN
+		// for (const auto x : xBounds) {
+		//	cout << x << ",";
+		// }
+		// cout << "\n";
+		// cout << "Plane size: " << plane.size() << "\n";
+		// // DEBUG END
+	}
+
 
 	if (this->implementation == Ped::SIMD) {
 		// Include padding in vectors so they are divisible by 4
@@ -119,16 +169,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 			yArray[i] =  agents[i]->getY();
 
 			agents[i]->reallocate_coordinates((int *) &(xArray[i]), (int *) &(yArray[i]));
-			
+
 			agents[i]->setDest(agents[i]->getNextDestination());
 			// agents[i]->computeNextDesiredPosition();
-			
+
 			destXarray[i] = (float) agents[i]->destination->getx();
 			destYarray[i] = (float) agents[i]->destination->gety();
 			destRarray[i] = (float) agents[i]->destination->getr();
 
 			destReached[i] = 0;
-			
+
 		}
 	}
 
@@ -136,14 +186,14 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  THREADS_PER_BLOCK = 64;
 	  int array_size = agents.size() + THREADS_PER_BLOCK - agents.size() % THREADS_PER_BLOCK;
 	  NUM_BLOCKS = array_size/THREADS_PER_BLOCK;
-	  
+
 	  xArray = (int *) malloc(array_size * sizeof(int));
 	  yArray = (int *) malloc(array_size * sizeof(int));
-	  
+
 	  destXarray = (float *) malloc(array_size * sizeof(float));
 	  destYarray = (float *) malloc(array_size * sizeof(float));
 	  destRarray = (float *) malloc(array_size * sizeof(float));
-	  
+
 	  destReached = (int *) malloc(array_size * sizeof(int));
 
 	  for (int i = 0; i < agents.size(); i++) {
@@ -151,10 +201,10 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	    yArray[i] =  agents[i]->getY();
 
 	    agents[i]->reallocate_coordinates((int *) &(xArray[i]), (int *) &(yArray[i]));
-			
+
 	    agents[i]->setDest(agents[i]->getNextDestination());
 	    // agents[i]->computeNextDesiredPosition();
-			
+
 	    destXarray[i] = (float) agents[i]->destination->getx();
 	    destYarray[i] = (float) agents[i]->destination->gety();
 	    destRarray[i] = (float) agents[i]->destination->getr();
@@ -177,7 +227,7 @@ void thread_func(std::vector<Ped::Tagent*> agents, int start_idx, int end_idx) {
 
 void Ped::Model::tick()
 {
-	// EDIT HERE FOR ASSIGNMENT 1 
+	// EDIT HERE FOR ASSIGNMENT 1
 	// 1. Retrieve each agent
 	// 2. Calculate its next desired position
 	// 3. Set its position to the calculated desired one
@@ -208,9 +258,9 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
-		
+
 		recalculate_regions(x0,x1,x2,x3,x4);
-		// Parallellize the outer loop only 	
+		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
 		#pragma omp parallel for
 		for (const auto& region: plane) {
@@ -221,7 +271,7 @@ void Ped::Model::tick()
 				move_atomic(agent);
 			}
 		}
-	
+
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
@@ -238,21 +288,21 @@ void Ped::Model::tick()
 
 			t1 = _mm_load_ps(&destXarray[i]);
 			diffX = _mm_sub_ps(t1, t0); // diffX = destX - agentX
-			
+
 			t3 = _mm_load_ps(&destYarray[i]);
 			diffY = _mm_sub_ps(t3, t2); // diffY = destY - agentY
-			
+
 			// length = sqrt(diffX^2 + diffY^2)
 			t4 = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(diffX, diffX), _mm_mul_ps(diffY, diffY)));
-			// reached = length < destR 
+			// reached = length < destR
 			t5 = _mm_load_ps(&destRarray[i]);
-			reached = _mm_cmpgt_ps(t5, t4);				
-		
+			reached = _mm_cmpgt_ps(t5, t4);
+
 			// desiredPositionX = (int)round(x + diffX/len);
 			// desiredPositionY = (int)round(y + diffY/len);
 			// Calculate the desired positions and set them into the x and y arrays
 			t6 = _mm_round_ps(_mm_add_ps(t0, _mm_div_ps(diffX, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-			
+
 			t7 = _mm_round_ps(_mm_add_ps(t2, _mm_div_ps(diffY, t4)), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
 
 			// Convert and store coordinates
@@ -261,7 +311,7 @@ void Ped::Model::tick()
 			yint = _mm_cvtps_epi32(t7);
 			_mm_store_si128((__m128i*) &yArray[i], yint);
 
-			
+
 			// Set the bit mask and get the indices of set bits in the mask
 			int mask = _mm_movemask_ps(reached);
 			for (int j = 0; j < 4; j++) {
@@ -275,12 +325,12 @@ void Ped::Model::tick()
 					agents[i+j]->setDest(nextDest);
 				}
 				mask >>= 1;
-			}		
-		}	
+			}
+		}
 	}
 	else if (this->implementation == Ped::CUDA) {
 	  tickCuda(xArray, yArray, destXarray, destYarray, destRarray, destReached, NUM_BLOCKS, THREADS_PER_BLOCK);
-	  
+
 	  for (int i = 0; i < agents.size(); i++) {
 	    if (destReached[i]) {
 	      Ped::Twaypoint* nextDest = agents[i]->getNextDestinationSpecial();
@@ -344,7 +394,7 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 		// If the current position is not yet taken by any neighbor
 		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
 
-			// Set the agent's position 
+			// Set the agent's position
 			agent->setX((*it).first);
 			agent->setY((*it).second);
 			changed_pos = true;
@@ -369,7 +419,7 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 			agent->setY(back_off.second);
 			changed_pos = true;
 		}
-	}		
+	}
 }
 // Moves the agent to the next desired position. If already taken, it will
 // be moved to a location close to it.
@@ -417,7 +467,7 @@ void Ped::Model::move(Ped::Tagent *agent)
 		// If the current position is not yet taken by any neighbor
 		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
 
-			// Set the agent's position 
+			// Set the agent's position
 			agent->setX((*it).first);
 			agent->setY((*it).second);
 			changed_pos = true;
@@ -441,8 +491,8 @@ void Ped::Model::move(Ped::Tagent *agent)
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
-		}
-	}		
+		}
+	}
 }
 
 /// Returns the list of neighbors within dist of the point x/y. This
@@ -455,7 +505,7 @@ void Ped::Model::move(Ped::Tagent *agent)
 set<const Ped::Tagent*> Ped::Model::getNeighbors(int x, int y, int dist) const {
 
 	// create the output list
-	// ( It would be better to include only the agents close by, but this programmer is lazy.)	
+	// ( It would be better to include only the agents close by, but this programmer is lazy.)
 
 	//return set<const Ped::Tagent*>(agents.begin(), agents.end());
 	set<const Ped::Tagent*> closeby_agents = {};
@@ -466,12 +516,12 @@ set<const Ped::Tagent*> Ped::Model::getNeighbors(int x, int y, int dist) const {
 			closeby_agents.insert(agent);
 		}
 	}
-	
+
 	return closeby_agents;
 }
 
 void Ped::Model::cleanup() {
-	// Nothing to do here right now. 
+	// Nothing to do here right now.
 }
 
 Ped::Model::~Model()
