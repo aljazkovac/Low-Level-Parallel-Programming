@@ -22,7 +22,8 @@
 #include <iostream>
 #include <unistd.h>
 using namespace std;
-
+// Populate the vectors of regions with agents and the 
+// plane vector with vectors of regions
 void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
 	for (const auto& agent: agents) {
 		if (agent->getX() >= x0 && agent->getX() < x1) {
@@ -82,7 +83,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 		//print the agents' x coordinate
 		for (const auto& agent: agents) {
-			cout << "x = " << agent->getX() << "\n";
+			cout << "y = " << agent->getY() << "\n";
 		}
 
 		// Check if the plane is populated correctly:
@@ -209,7 +210,7 @@ void Ped::Model::tick()
 				agent->computeNextDesiredPosition();
 				//agent->setX(agent->getDesiredX());
 				//agent->setY(agent->getDesiredY());
-				move(agent);
+				move_atomic(agent);
 			}
 		}
 	}
@@ -343,16 +344,24 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 	}
 
 	// If no empty alternative position could be found, attempt to back off
-	if (changed_pos == false) {
+	// But be careful to not walk off screen
+	if (changed_pos == false && agent->getX() > 0 && agent->getY() > 0) {
 		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
+			changed_pos = true;
 		}
 	}
+	if (changed_pos == false && agent->getX() < 120 && agent->getY() < 80) {
+		back_off = std::make_pair(agent->getX()+1, agent->getY()+1);
+		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
+			agent->setX(back_off.first);
+			agent->setY(back_off.second);
+			changed_pos = true;
+		}
+	}		
 }
-
-
 // Moves the agent to the next desired position. If already taken, it will
 // be moved to a location close to it.
 void Ped::Model::move(Ped::Tagent *agent)
@@ -409,7 +418,7 @@ void Ped::Model::move(Ped::Tagent *agent)
 
 	// If no empty alternative position could be found, attempt to back off
 	// But be careful to not walk off screen
-	if (changed_pos == false && agent->getX() != 0 && agent->getY() != 0) {
+	if (changed_pos == false && agent->getX() > 0 && agent->getY() > 0) {
 		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
 			agent->setX(back_off.first);
@@ -417,14 +426,14 @@ void Ped::Model::move(Ped::Tagent *agent)
 			changed_pos = true;
 		}
 	}
-	if (changed_pos == false && agent->getX() != x4 && agent->getY() < 80) {
+	if (changed_pos == false && agent->getX() < 120 && agent->getY() < 80) {
 		back_off = std::make_pair(agent->getX()+1, agent->getY()+1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
-		}		
-	}
+		}
+	}		
 }
 
 /// Returns the list of neighbors within dist of the point x/y. This

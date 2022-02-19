@@ -28,16 +28,6 @@ namespace Ped{
   class Model
   {
   public:
-
-    // Determine the region coordinates (4 regions)
-		// I am basing this on the max coordinates I have seen in the 
-		// hugeScenario
-		int x0 = 0;
-		int x1 = 46;
-		int x2 = 92;
-		int x3 = 138;
-		int x4 = 184;
-
     void populate_regions(int x0, int x1, int x2, int x3, int x4);
     // Sets everything up
     void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation, int number_of_threads = 2);		
@@ -78,7 +68,7 @@ namespace Ped{
     float *destRarray;
     
     int *destReached;
-    
+
     // The agents in this scenario
     std::vector<Tagent*> agents;
 
