@@ -349,7 +349,8 @@ void Ped::Model::move(Ped::Tagent *agent)
 
 	int diffX = pDesired.first - agent->getX();
 	int diffY = pDesired.second - agent->getY();
-	std::pair<int, int> p1, p2;
+	// Initialize pairs (added back_off here)
+	std::pair<int, int> p1, p2, back_off;
 	if (diffX == 0 || diffY == 0)
 	{
 		// Agent wants to walk straight to North, South, West or East
@@ -365,6 +366,8 @@ void Ped::Model::move(Ped::Tagent *agent)
 	prioritizedAlternatives.push_back(p2);
 
 	// Find the first empty alternative position
+	// flag for changed position
+	bool changed_pos = false;
 	for (std::vector<pair<int, int> >::iterator it = prioritizedAlternatives.begin(); it != prioritizedAlternatives.end(); ++it) {
 
 		// If the current position is not yet taken by any neighbor
@@ -373,12 +376,19 @@ void Ped::Model::move(Ped::Tagent *agent)
 			// Set the agent's position 
 			agent->setX((*it).first);
 			agent->setY((*it).second);
-
+			changed_pos = true;
 			break;
 		}
 	}
 
-	// TODO: If no empty alternative position can be found, attempt to back off 
+	// If no empty alternative position could be found, attempt to back off
+	if (changed_pos == false) {
+		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
+		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
+			agent->setX(back_off.first);
+			agent->setY(back_off.second);
+		}
+	}
 
 }
 
