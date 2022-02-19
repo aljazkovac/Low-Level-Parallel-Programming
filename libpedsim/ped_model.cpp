@@ -23,6 +23,23 @@
 #include <unistd.h>
 using namespace std;
 
+void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
+	for (const auto& agent: agents) {
+		if (agent->getX() >= x0 && agent->getX() < x1) {
+			plane[0].push_back(agent);
+		}
+		else if (agent->getX() >= x1 && agent->getX() < x2) {
+			plane[1].push_back(agent);
+		}
+		else if (agent->getX() >= x2 && agent->getX() < x3) {
+			plane[2].push_back(agent);
+		}
+		else if (agent->getX() >= x3 && agent->getX() <= x4) {
+			plane[3].push_back(agent);
+		}
+	}	
+}
+
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
 {
 	// Convenience test: does CUDA work on this machine?
@@ -45,42 +62,35 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 	if (this->implementation == Ped::OMP) {
 		// Determine the region coordinates (4 regions)
+		// I am basing this on the max coordinates I have seen in the 
+		// hugeScenario
 		int x0 = 0;
-		int x1 = 40;
-		int x2 = 80;
-		int x3 = 120;
-		int x4 = 160;
-	
-	// Initialize the plane vector and the regions vectors
-	for (std::size_t i = 0; i < 4; ++i) {
-		std::vector<Ped::Tagent*> region;
-		plane.push_back(region);
-	}
+		int x1 = 46;
+		int x2 = 92;
+		int x3 = 138;
+		int x4 = 184;	
 
-	// Populate the vectors of regions with agents and the 
-	// plane vector with vectors of regions  
-		for (const auto& agent: agents) {
-			if (agent->getX() >= x0 && agent->getX() < x1) {
-				plane[0].push_back(agent);
-			}
-			else if (agent->getX() >= x1 && agent->getX() < x2) {
-				plane[1].push_back(agent);
-			}
-			else if (agent->getX() >= x2 && agent->getX() < x3) {
-				plane[2].push_back(agent);
-			}
-			else if (agent->getX() >= x3 && agent->getX() < x4) {
-				plane[3].push_back(agent);
-			}
+		// Initialize the plane vector and the regions vectors
+		for (std::size_t i = 0; i < 4; ++i) {
+			std::vector<Ped::Tagent*> region;
+			plane.push_back(region);
 		}
 
-	// Check if the plane is populated correctly:
-	cout << "Nr. of agents: " << agents.size() << "\n";
-	cout << "Plane size: " << plane.size() << "\n";
-	for (std::size_t i = 0; i < plane.size(); ++i) {
-		cout << "Region size: " << plane[i].size() << "\n";
-	}
+		// Populate the vectors of regions with agents and the 
+		// plane vector with vectors of regions
+		populate_regions(x0,x1,x2,x3,x4);
 
+		//print the agents' x coordinate
+		for (const auto& agent: agents) {
+			cout << "x = " << agent->getX() << "\n";
+		}
+
+		// Check if the plane is populated correctly:
+		cout << "Nr. of agents: " << agents.size() << "\n";
+		cout << "Plane size: " << plane.size() << "\n";
+		for (std::size_t i = 0; i < plane.size(); ++i) {
+			cout << "Region size: " << plane[i].size() << "\n";
+		}
 }
 
 	if (this->implementation == Ped::SIMD) {
@@ -191,14 +201,16 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
-		
+		// Parallellize the outer loop only 	
 		omp_set_num_threads(plane.size());
 		#pragma omp parallel for
-		for (const auto& agent: agents) {
-			agent->computeNextDesiredPosition();
-			//agent->setX(agent->getDesiredX());
-			//agent->setY(agent->getDesiredY());
-			move(agent);
+		for (const auto& region: plane) {
+			for (const auto& agent: region) {
+				agent->computeNextDesiredPosition();
+				//agent->setX(agent->getDesiredX());
+				//agent->setY(agent->getDesiredY());
+				move(agent);
+			}
 		}
 	}
 	else if(this->implementation == Ped::SIMD) {
@@ -396,12 +408,22 @@ void Ped::Model::move(Ped::Tagent *agent)
 	}
 
 	// If no empty alternative position could be found, attempt to back off
-	if (changed_pos == false) {
+	// But be careful to not walk off screen
+	if (changed_pos == false && agent->getX() != 0 && agent->getY() != 0) {
 		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
+			changed_pos = true;
 		}
+	}
+	if (changed_pos == false && agent->getX() != x4 && agent->getY() < 80) {
+		back_off = std::make_pair(agent->getX()+1, agent->getY()+1);
+		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
+			agent->setX(back_off.first);
+			agent->setY(back_off.second);
+			changed_pos = true;
+		}		
 	}
 }
 
