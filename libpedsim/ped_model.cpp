@@ -277,6 +277,70 @@ void Ped::Model::tick()
 /// Don't use this for Assignment 1!
 ///////////////////////////////////////////////
 
+// The same function as move below, only that this one does things atomically, using CAS
+void Ped::Model::move_atomic(Ped::Tagent *agent)
+{
+	// Search for neighboring agents
+	set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
+
+	// Retrieve their positions
+	std::vector<std::pair<int, int> > takenPositions;
+	for (std::set<const Ped::Tagent*>::iterator neighborIt = neighbors.begin(); neighborIt != neighbors.end(); ++neighborIt) {
+		std::pair<int, int> position((*neighborIt)->getX(), (*neighborIt)->getY());
+		takenPositions.push_back(position);
+	}
+
+	// Compute the three alternative positions that would bring the agent
+	// closer to his desiredPosition, starting with the desiredPosition itself
+	std::vector<std::pair<int, int> > prioritizedAlternatives;
+	std::pair<int, int> pDesired(agent->getDesiredX(), agent->getDesiredY());
+	prioritizedAlternatives.push_back(pDesired);
+
+	int diffX = pDesired.first - agent->getX();
+	int diffY = pDesired.second - agent->getY();
+	// Initialize pairs (added back_off here)
+	std::pair<int, int> p1, p2, back_off;
+	if (diffX == 0 || diffY == 0)
+	{
+		// Agent wants to walk straight to North, South, West or East
+		p1 = std::make_pair(pDesired.first + diffY, pDesired.second + diffX);
+		p2 = std::make_pair(pDesired.first - diffY, pDesired.second - diffX);
+	}
+	else {
+		// Agent wants to walk diagonally
+		p1 = std::make_pair(pDesired.first, agent->getY());
+		p2 = std::make_pair(agent->getX(), pDesired.second);
+	}
+	prioritizedAlternatives.push_back(p1);
+	prioritizedAlternatives.push_back(p2);
+
+	// Find the first empty alternative position
+	// flag for changed position
+	bool changed_pos = false;
+	for (std::vector<pair<int, int> >::iterator it = prioritizedAlternatives.begin(); it != prioritizedAlternatives.end(); ++it) {
+
+		// If the current position is not yet taken by any neighbor
+		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
+
+			// Set the agent's position 
+			agent->setX((*it).first);
+			agent->setY((*it).second);
+			changed_pos = true;
+			break;
+		}
+	}
+
+	// If no empty alternative position could be found, attempt to back off
+	if (changed_pos == false) {
+		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
+		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
+			agent->setX(back_off.first);
+			agent->setY(back_off.second);
+		}
+	}
+}
+
+
 // Moves the agent to the next desired position. If already taken, it will
 // be moved to a location close to it.
 void Ped::Model::move(Ped::Tagent *agent)
