@@ -22,6 +22,13 @@
 #include <iostream>
 #include <unistd.h>
 using namespace std;
+
+struct less_than_key {
+  inline bool operator() (const Ped::Tagent* agent1, const Ped::Tagent* agent2) {
+    return (agent1->getX() < agent2->getX());
+  }
+};
+
 // Populate the vectors of regions with agents and the
 // plane vector with vectors of regions
 void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
@@ -52,14 +59,83 @@ void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
 	for (auto& region: plane) {
 		region.clear();
 	}
-	// Check if the plane is cleared correctly:
-		cout << "Nr. of agents: " << agents.size() << "\n";
-		cout << "Plane size: " << plane.size() << "\n";
-		for (std::size_t i = 0; i < plane.size(); ++i) {
-			cout << "Region size: " << plane[i].size() << "\n";
-		}
+	// // Check if the plane is cleared correctly:
+	// 	cout << "Nr. of agents: " << agents.size() << "\n";
+	// 	cout << "Plane size: " << plane.size() << "\n";
+	// 	for (std::size_t i = 0; i < plane.size(); ++i) {
+	// 		cout << "Region size: " << plane[i].size() << "\n";
+	// 	}
 
 	populate_regions(x0, x1, x2, x3, x4);
+}
+
+void Ped::Model::populate_dynamic_regions() {
+	// // Check if the plane is cleared correctly:
+	// 	cout << "Nr. of agents: " << agents.size() << "\n";
+	// 	cout << "Plane size: " << plane.size() << "\n";
+	// 	for (std::size_t i = 0; i < plane.size(); ++i) {
+	// 		cout << "Region size: " << plane[i].size() << "\n";
+	// 	}
+
+	// Choose max percentage of agents allowed per region
+	float max_per_region = 0.25;
+		
+	// Determine the nr. of agents per region
+	float agents_per_region = std::floor(agents.size() * max_per_region);
+	std::cout << "Max per region: " << max_per_region << "\n"
+		  << "Agents per region: " << agents_per_region << "\n"
+		  << "Nr of agents: " << agents.size() << "\n";
+		
+	// Determine the nr. of regions
+	float nr_regions = std::ceil(agents.size() / agents_per_region);
+	std::cout << "Nr of regions: " << nr_regions << "\n";
+		
+	// Sort the agent vector according to the agents' x coordinates
+	std::sort(agents.begin(), agents.end(), less_than_key());
+	int count = 0;
+
+	// Define the boundary of a region as the x value of the rightmost agent
+	std::vector<int> xBounds;
+
+	for (std::size_t i = 0; i < nr_regions; ++i) {
+	  std::vector<Ped::Tagent*> region;
+	  xBounds.push_back(0);
+	  for (std::size_t j = 0; j < agents_per_region; ++j) {
+	    if (count < agents.size()) {
+	      region.push_back(agents[count]);
+	      xBounds[i] = agents[count]->getX();
+	      count++;
+	    }
+	  }
+	  
+	  // Here we are at the final agents X-value, want to take all remaining agents with same X-value	  
+	  int last_x = agents[count-1]->getX();
+	  
+	  while (agents[count]->getX() == last_x && count < agents.size()) {
+	    region.push_back(agents[count]);
+	    count++;
+	  }
+
+	  // DEBUG
+	  cout << "Region size: " << region.size() << "\n";
+	  plane.push_back(region);
+	}
+
+	//DEBUG BEGIN
+	for (const auto x : xBounds) {
+	  cout << x << ",";
+	}
+	cout << "\n";
+	cout << "Plane size: " << plane.size() << "\n";
+	// DEBUG END
+}
+
+void Ped::Model::repopulate_dynamic_regions() {
+  for (auto& region: plane) {
+    region.clear();
+  }
+  plane.clear();
+  populate_dynamic_regions();
 }
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation, int number_of_threads)
@@ -84,69 +160,29 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 	// A comparator operator that enables the sorting of agents according
 	// to their x coordinates
-	struct less_than_key {
-	  inline bool operator() (const Ped::Tagent* agent1, const Ped::Tagent* agent2) {
-	    return (agent1->getX() < agent2->getX());
-	  }
-	};
+	
 
 	if (this->implementation == Ped::OMP) {
-		x0 = 0;
-		x1 = 46;
-		x2 = 92;
-		x3 = 138;
-		x4 = 184;
+	        // x0 = 0;
+		// x1 = 46;
+		// x2 = 92;
+		// x3 = 138;
+		// x4 = 184;
 
-		// Initialize the plane vector and the regions vectors
-		for (std::size_t i = 0; i < 4; ++i) {
-			std::vector<Ped::Tagent*> region;
-			plane.push_back(region);
-		}
+		// // Initialize the plane vector and the regions vectors
+		// for (std::size_t i = 0; i < 4; ++i) {
+		// 	std::vector<Ped::Tagent*> region;
+		// 	plane.push_back(region);
+		// }
 
-		// Populate the vectors of regions with agents and the
-		// plane vector with vectors of regions
-		populate_regions(x0,x1,x2,x3,x4);
+		// // Populate the vectors of regions with agents and the
+		// // plane vector with vectors of regions
+		// populate_regions(x0,x1,x2,x3,x4);
 
 		// ---------- Dynamic regions ----------------
 
-		// Choose max percentage of agents allowed per region
-		// float max_per_region = 0.25;
-		// // Determine the nr. of agents per region
-		// float agents_per_region = std::floor(agents.size() * max_per_region);
-		// std::cout << "Max per region: " << max_per_region << "\n" << "Agents per region: " << agents_per_region << "\n" << "Nr of agents: " << agents.size() << "\n";
-		// // Determine the nr. of regions
-		// float nr_regions = std::ceil(agents.size() / agents_per_region);
-		// std::cout << "Nr of regions: " << nr_regions << "\n";
-		// // Sort the agent vector according to the agents' x coordinates
-		// std::sort(agents.begin(), agents.end(), less_than_key());
-		// int count = 0;
-
-		// // Define the boundary of a region as the x value of the rightmost agent
-		// std::vector<int> xBounds;
-
-		// for (std::size_t i = 0; i < nr_regions; ++i) {
-		//	std::vector<Ped::Tagent*> region;
-		//	xBounds.push_back(0);
-		//	for (std::size_t j = 0; j < agents_per_region; ++j) {
-		//		if (count < agents.size()) {
-		//			region.push_back(agents[count]);
-		//			xBounds[i] = agents[count]->getX();
-		//			count ++;
-		//		}
-		//	}
-
-		//	// DEBUG
-		//	cout << "Region size: " << region.size() << "\n";
-		//	plane.push_back(region);
-		// }
-
-		// //DEBUG BEGIN
-		// for (const auto x : xBounds) {
-		//	cout << x << ",";
-		// }
-		// cout << "\n";
-		// cout << "Plane size: " << plane.size() << "\n";
-		// // DEBUG END
+	  populate_dynamic_regions();
+		
 	}
 
 
@@ -259,7 +295,7 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::OMP) {
 
-		recalculate_regions(x0,x1,x2,x3,x4);
+	        repopulate_dynamic_regions();
 		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
 		#pragma omp parallel for

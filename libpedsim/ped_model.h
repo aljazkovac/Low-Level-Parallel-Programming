@@ -28,8 +28,13 @@ namespace Ped{
   class Model
   {
   public:
+    // -------------- A3 ------------------------------------------------
     void populate_regions(int x0, int x1, int x2, int x3, int x4);
     void recalculate_regions(int x0, int x1, int x2, int x3, int x4);
+
+    void populate_dynamic_regions();
+    void repopulate_dynamic_regions();
+    // ------------------------------------------------------------------
     // Sets everything up
     void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation, int number_of_threads = 2);		
 	
@@ -71,13 +76,13 @@ namespace Ped{
     int *destReached;
 
     // Determine the region coordinates (4 regions)
-		// I am basing this on the max coordinates I have seen in the 
-		// hugeScenario
-		int x0;
-		int x1;
-		int x2;
-		int x3;
-		int x4;	
+    // I am basing this on the max coordinates I have seen in the 
+    // hugeScenario
+    int x0;
+    int x1;
+    int x2;
+    int x3;
+    int x4;	
 
     // The agents in this scenario
     std::vector<Tagent*> agents;
@@ -104,6 +109,8 @@ namespace Ped{
 
     // Returns the set of neighboring agents for the specified position
     set<const Ped::Tagent*> getNeighbors(int x, int y, int dist) const;
+
+    
 
 
     ////////////
