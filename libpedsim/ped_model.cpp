@@ -71,6 +71,38 @@ void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
 	populate_regions(x0, x1, x2, x3, x4);
 }
 
+void Ped::Model::create_two_boundaries(int count, int xBound, int boundary_counter) {
+  // xBound contains last x
+  
+  boundaries.push_back({});
+  for (int j = 0; j < 300; j++) {
+    boundaries[boundary_counter].push_back(0);
+  }
+
+  int count2 = count - 1;
+  while (agents[count2]->getX() == xBound) {
+    boundaries[boundary_counter][agents[count2]->getY()] = 1;
+    count2--;
+  }
+  boundary_counter++;
+
+  boundaries.push_back({});
+  for (int j = 0; j < 300; j++) {
+    boundaries[boundary_counter].push_back(0);
+  }
+
+  printf("size: %d, count: %d\n", agents.size(), count);
+  if (count < agents.size()) {
+    while(count < agents.size() && agents[count]->getX() == (xBound + 1)) {
+      printf("hello\n");
+      boundaries[boundary_counter][agents[count]->getY()] = 1;
+      count++;
+    }
+    boundary_counter++;
+  }
+  printf("im out!\n");
+}
+
 void Ped::Model::populate_dynamic_regions() {
 	// Choose max percentage of agents allowed per region
 	float max_per_region = 0.25;
@@ -91,10 +123,14 @@ void Ped::Model::populate_dynamic_regions() {
 
 	// Define the boundary between two regions as the x values of rightmost agent in the left
 	// zone and the leftmost agent in the right zone
-	// std::vector<std::tuple<int, int>> xBounds;
-	
+
+	// PUT CHECK OF region.size() HERE TO GET RIGHT AMOUNT OF BOUNDARIES.
+
+	int boundary_counter = 0;
 	for (std::size_t i = 0; i < nr_regions; ++i) {
+	  printf("Region iteration: %d\n", i);
 	  std::vector<Ped::Tagent*> region;
+	  
 	  int xBound = 0;
 	  for (std::size_t j = 0; j < agents_per_region; ++j) {
 	    if (count < agents.size()) {
@@ -103,6 +139,9 @@ void Ped::Model::populate_dynamic_regions() {
 	      count++;
 	    }
 	  }
+	  printf("size: %d, counT: %d\n", agents.size(), count);
+
+	  // REGION ------------------------
 
 	  if (i < nr_regions - 1) {
 	    xBounds.push_back(make_tuple(xBound, xBound + 1));
@@ -111,9 +150,11 @@ void Ped::Model::populate_dynamic_regions() {
 	  // Here we are at the final agents X-value, want to take all remaining agents with same X-value	  
 	  int last_x = agents[count-1]->getX();
 	  
-	  while (agents[count]->getX() == last_x && count < agents.size()) {
+	  while (count < agents.size() && agents[count]->getX() == last_x) {
 	    region.push_back(agents[count]);
-	    count++;
+	    if (count < agents.size()) {
+	      count++;
+	    }
 	  }
 
 	  // DEBUG
@@ -121,6 +162,10 @@ void Ped::Model::populate_dynamic_regions() {
 	    cout << "Region size: " << region.size() << "\n";
 	    plane.push_back(region);
 	  }
+
+	  // BOUNDARY ARRAYS --------------------
+	  create_two_boundaries(count, xBound, boundary_counter);
+	  boundary_counter = boundary_counter + 2;
 	}
 
 	//DEBUG BEGIN
@@ -138,8 +183,12 @@ void Ped::Model::repopulate_dynamic_regions() {
   for (auto& region: plane) {
     region.clear();
   }
+  for (auto& boundary: boundaries) {
+    boundary.clear();
+  }
   xBounds.clear();
   plane.clear();
+  
   populate_dynamic_regions();
 }
 
@@ -185,7 +234,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 		// populate_regions(x0,x1,x2,x3,x4);
 
 		// ---------- Dynamic regions ----------------
-
 	  populate_dynamic_regions();
 	}
 
@@ -396,7 +444,7 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 	set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
 
 	// Retrieve their positions
-	std::vector<std::pair<int, int> > takenPositions;
+	std::vector<std::pair<int, int>> takenPositions;
 	for (std::set<const Ped::Tagent*>::iterator neighborIt = neighbors.begin(); neighborIt != neighbors.end(); ++neighborIt) {
 		std::pair<int, int> position((*neighborIt)->getX(), (*neighborIt)->getY());
 		takenPositions.push_back(position);
@@ -433,7 +481,18 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 
 		// If the current position is not yet taken by any neighbor
 		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
-
+		  // // CAS
+		  // for (int i = 0; i < xBounds.size(); i++) {
+		  //   // even index
+		  //   if (*it.first == get<0>(xBoundary)) {
+		  //     int desiredY = boundaries[i*2][*it.second];
+		  //   }
+		  //   // odd index
+		  //   if (*it.first == get<1>(xBoundary)) {
+		  //     int desiredY = boundaries[i*2+1][*it.second];
+		  //   }
+		  //   compare_and_swap(0, desiredY, 1);
+		  // }
 			// Set the agent's position
 			agent->setX((*it).first);
 			agent->setY((*it).second);

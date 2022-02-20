@@ -35,6 +35,7 @@ namespace Ped{
 
     void populate_dynamic_regions();
     void repopulate_dynamic_regions();
+    void create_two_boundaries(int count, int xBound, int boundary_counter);
     // ------------------------------------------------------------------
     // Sets everything up
     void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation, int number_of_threads = 2);		
@@ -100,7 +101,7 @@ namespace Ped{
     // The plane for Assignment 3
     std::vector<std::vector<Ped::Tagent*>> plane;
     std::vector<std::tuple<int, int>> xBounds;
-    std::vector<std::vector<std::atomic<bool>>> boundaries;
+    std::vector<std::vector<int>> boundaries;
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
