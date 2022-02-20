@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <unistd.h>
+#include <time.h>
+#include <atomic>
 using namespace std;
 
 struct less_than_key {
@@ -70,13 +72,6 @@ void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
 }
 
 void Ped::Model::populate_dynamic_regions() {
-	// // Check if the plane is cleared correctly:
-	// 	cout << "Nr. of agents: " << agents.size() << "\n";
-	// 	cout << "Plane size: " << plane.size() << "\n";
-	// 	for (std::size_t i = 0; i < plane.size(); ++i) {
-	// 		cout << "Region size: " << plane[i].size() << "\n";
-	// 	}
-
 	// Choose max percentage of agents allowed per region
 	float max_per_region = 0.25;
 		
@@ -94,18 +89,23 @@ void Ped::Model::populate_dynamic_regions() {
 	std::sort(agents.begin(), agents.end(), less_than_key());
 	int count = 0;
 
-	// Define the boundary of a region as the x value of the rightmost agent
-	std::vector<int> xBounds;
-
+	// Define the boundary between two regions as the x values of rightmost agent in the left
+	// zone and the leftmost agent in the right zone
+	// std::vector<std::tuple<int, int>> xBounds;
+	
 	for (std::size_t i = 0; i < nr_regions; ++i) {
 	  std::vector<Ped::Tagent*> region;
-	  xBounds.push_back(0);
+	  int xBound = 0;
 	  for (std::size_t j = 0; j < agents_per_region; ++j) {
 	    if (count < agents.size()) {
 	      region.push_back(agents[count]);
-	      xBounds[i] = agents[count]->getX();
+	      xBound = agents[count]->getX();
 	      count++;
 	    }
+	  }
+
+	  if (i < nr_regions - 1) {
+	    xBounds.push_back(make_tuple(xBound, xBound + 1));
 	  }
 	  
 	  // Here we are at the final agents X-value, want to take all remaining agents with same X-value	  
@@ -117,23 +117,28 @@ void Ped::Model::populate_dynamic_regions() {
 	  }
 
 	  // DEBUG
-	  cout << "Region size: " << region.size() << "\n";
-	  plane.push_back(region);
+	  if (region.size() > 0) {
+	    cout << "Region size: " << region.size() << "\n";
+	    plane.push_back(region);
+	  }
 	}
 
 	//DEBUG BEGIN
 	for (const auto x : xBounds) {
-	  cout << x << ",";
+	  printf("(%d, %d), ", get<0>(x), get<1>(x));
 	}
 	cout << "\n";
 	cout << "Plane size: " << plane.size() << "\n";
 	// DEBUG END
+
+	
 }
 
 void Ped::Model::repopulate_dynamic_regions() {
   for (auto& region: plane) {
     region.clear();
   }
+  xBounds.clear();
   plane.clear();
   populate_dynamic_regions();
 }
@@ -182,7 +187,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 		// ---------- Dynamic regions ----------------
 
 	  populate_dynamic_regions();
-		
 	}
 
 
@@ -440,6 +444,8 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 
 	// If no empty alternative position could be found, attempt to back off
 	// But be careful to not walk off screen
+	//srand(time(NULL));
+
 	if (changed_pos == false && agent->getX() > 0 && agent->getY() > 0) {
 		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
@@ -540,14 +546,12 @@ void Ped::Model::move(Ped::Tagent *agent)
 /// \param   dist the distance around x/y that will be searched for agents (search field is a square in the current implementation)
 set<const Ped::Tagent*> Ped::Model::getNeighbors(int x, int y, int dist) const {
 
-	// create the output list
-	// ( It would be better to include only the agents close by, but this programmer is lazy.)
-
 	//return set<const Ped::Tagent*>(agents.begin(), agents.end());
 	set<const Ped::Tagent*> closeby_agents = {};
 
+	int tid = omp_get_thread_num();
 	// Consider only the agents that are within the given distance
-	for (const auto& agent: agents) {
+	for (const auto& agent: plane[tid]) {
 		if (agent->getX() < (x + dist) && agent->getX() > (x - dist) && agent->getY() < (y + dist) && agent->getY() > (y - dist)) {
 			closeby_agents.insert(agent);
 		}

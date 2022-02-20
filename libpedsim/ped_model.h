@@ -16,6 +16,7 @@
 #include <set>
 
 #include "ped_agent.h"
+#include <atomic>
 
 // Thread function
 namespace Ped{
@@ -97,7 +98,9 @@ namespace Ped{
     void move_atomic(Ped::Tagent *agent);
 
     // The plane for Assignment 3
-	  std::vector<std::vector<Ped::Tagent*>> plane;
+    std::vector<std::vector<Ped::Tagent*>> plane;
+    std::vector<std::tuple<int, int>> xBounds;
+    std::vector<std::vector<std::atomic<bool>>> boundaries;
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
