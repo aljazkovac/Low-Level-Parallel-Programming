@@ -317,23 +317,36 @@ void Ped::Model::tick()
 				//agent->setY(agent->getDesiredY());
 				int currentX = agent->getX();
 				int currentY = agent->getY();
+				auto new_pos = move_atomic(agent);
+				int newX = new_pos.first;
+				int newY = new_pos.second;
 				for (const auto x : xBounds) {
-					if (currentX == get<0>(x) || currentX == get<1>(x) || currentX == get<0>(x) -1 || currentX == get<1>(x) + 1) {
-
 						//400 is  just a magic number so all y coordinates will fit :)
-						bool old_val = border_occupied[i*400+currentY].load();
-						bool new_val = !old_val;
-						while (!border_occupied[i*400+currentY].compare_exchange_weak(old_val, new_val));
-						move(agent);
+						while(1) {
+							if (newX == get<0>(x) || newX == get<1>(x)) {
+								bool old_val = border_occupied[i*400+new_pos.second].load();
+								bool new_val = !old_val;
+								if (border_occupied[i*400+new_pos.second].compare_exchange_weak(old_val, new_val)){
+									moved = true;
+									new_pos = move_atomic(agent);
+									newX = new_pos.first;
+									newY = new_pos.second;
+									break;
+								}
+							}
+							else {
+								break;
+							}
+						}
+						agent->setX(newX);
+						agent->setY(newY);
+						// move(agent);
 
-						moved = true;
 						break;
-					}
 				}
 				if (!moved) {
 					move(agent);
 				}
-				// move_atomic(agent);
 			}
 		}
 
