@@ -116,6 +116,11 @@ void Ped::Model::populate_dynamic_regions() {
 	    count++;
 	  }
 
+	  //Setup border_occupied
+	  for (int i = 0; i < 42000; i++) {
+		  border_occupied[i] = false;
+	  }
+
 	  // DEBUG
 	  if (region.size() > 0) {
 	    cout << "Region size: " << region.size() << "\n";
@@ -308,7 +313,10 @@ void Ped::Model::tick()
 				agent->computeNextDesiredPosition();
 				//agent->setX(agent->getDesiredX());
 				//agent->setY(agent->getDesiredY());
-				move_atomic(agent);
+				std::pair<int, int> new_pos = move_atomic(agent);
+				agent->setX(new_pos.first);
+				agent->setY(new_pos.second);
+				// move_atomic(agent);
 			}
 		}
 
@@ -390,8 +398,9 @@ void Ped::Model::tick()
 ///////////////////////////////////////////////
 
 // The same function as move below, only that this one does things atomically, using CAS
-void Ped::Model::move_atomic(Ped::Tagent *agent)
+std::pair<int,int> Ped::Model::move_atomic(Ped::Tagent *agent)
 {
+	std::pair<int, int> result = make_pair(agent->getX(), agent->getY());
 	// Search for neighboring agents
 	set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
 
@@ -435,8 +444,9 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
 
 			// Set the agent's position
-			agent->setX((*it).first);
-			agent->setY((*it).second);
+			// agent->setX((*it).first);
+			// agent->setY((*it).second);
+			result = *it;
 			changed_pos = true;
 			break;
 		}
@@ -449,19 +459,22 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 	if (changed_pos == false && agent->getX() > 0 && agent->getY() > 0) {
 		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
-			agent->setX(back_off.first);
-			agent->setY(back_off.second);
+			// agent->setX(back_off.first);
+			// agent->setY(back_off.second);
+			result = back_off;
 			changed_pos = true;
 		}
 	}
 	if (changed_pos == false && agent->getX() < 120 && agent->getY() < 80) {
 		back_off = std::make_pair(agent->getX()+1, agent->getY()+1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
-			agent->setX(back_off.first);
-			agent->setY(back_off.second);
+			// agent->setX(back_off.first);
+			// agent->setY(back_off.second);
+			result = back_off;
 			changed_pos = true;
 		}
 	}
+	return result;
 }
 // Moves the agent to the next desired position. If already taken, it will
 // be moved to a location close to it.
@@ -533,7 +546,8 @@ void Ped::Model::move(Ped::Tagent *agent)
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
-		}
+		}
+
 	}
 }
 

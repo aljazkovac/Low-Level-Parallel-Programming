@@ -95,12 +95,14 @@ namespace Ped{
     void move(Ped::Tagent *agent);
     
     // Moves an agent towards its next destination in an atomic way
-    void move_atomic(Ped::Tagent *agent);
+    std::pair<int,int> move_atomic(Ped::Tagent *agent);
 
     // The plane for Assignment 3
     std::vector<std::vector<Ped::Tagent*>> plane;
     std::vector<std::tuple<int, int>> xBounds;
     std::vector<std::vector<std::atomic<bool>>> boundaries;
+    // This array is WAY too big, but it should get the job done at least.
+    bool border_occupied[42000];
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
@@ -112,6 +114,7 @@ namespace Ped{
 
     // Returns the set of neighboring agents for the specified position
     set<const Ped::Tagent*> getNeighbors(int x, int y, int dist) const;
+
 
     
 
