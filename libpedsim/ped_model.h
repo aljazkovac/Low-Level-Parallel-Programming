@@ -28,6 +28,7 @@ namespace Ped{
 
   class Model
   {
+    std::atomic<bool> shared;
   public:
     // -------------- A3 ------------------------------------------------
     void populate_regions(int x0, int x1, int x2, int x3, int x4);
@@ -102,7 +103,7 @@ namespace Ped{
     std::vector<std::tuple<int, int>> xBounds;
     std::vector<std::vector<std::atomic<bool>>> boundaries;
     // This array is WAY too big, but it should get the job done at least.
-    bool border_occupied[42000];
+    std::atomic<bool> border_occupied[42000];
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;

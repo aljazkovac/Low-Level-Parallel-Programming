@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stack>
 #include <algorithm>
+#include <atomic>
 #include <device_launch_parameters.h>
 #include <omp.h>
 #include <thread>
@@ -303,19 +304,35 @@ void Ped::Model::tick()
 		}
 	}
 	else if (this->implementation == Ped::OMP) {
+		bool moved = false;
 
 	        repopulate_dynamic_regions();
 		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
 		#pragma omp parallel for
-		for (const auto& region: plane) {
-			for (const auto& agent: region) {
+		for (int i = 0; i < plane.size(); i++) {
+			for (const auto& agent: plane[i]) {
 				agent->computeNextDesiredPosition();
 				//agent->setX(agent->getDesiredX());
 				//agent->setY(agent->getDesiredY());
-				std::pair<int, int> new_pos = move_atomic(agent);
-				agent->setX(new_pos.first);
-				agent->setY(new_pos.second);
+				int currentX = agent->getX();
+				int currentY = agent->getY();
+				for (const auto x : xBounds) {
+					if (currentX == get<0>(x) || currentX == get<1>(x) || currentX == get<0>(x) -1 || currentX == get<1>(x) + 1) {
+
+						//400 is  just a magic number so all y coordinates will fit :)
+						bool old_val = border_occupied[i*400+currentY].load();
+						bool new_val = !old_val;
+						while (!border_occupied[i*400+currentY].compare_exchange_weak(old_val, new_val));
+						move(agent);
+
+						moved = true;
+						break;
+					}
+				}
+				if (!moved) {
+					move(agent);
+				}
 				// move_atomic(agent);
 			}
 		}
