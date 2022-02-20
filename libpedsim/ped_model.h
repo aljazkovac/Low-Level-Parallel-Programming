@@ -101,7 +101,8 @@ namespace Ped{
     // The plane for Assignment 3
     std::vector<std::vector<Ped::Tagent*>> plane;
     std::vector<std::tuple<int, int>> xBounds;
-    std::vector<std::vector<int>> boundaries;
+    std::vector<std::vector<int>> boundaries2;
+    std::array<std::array<std::atomic<bool>, 400>, 8> boundaries;
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;

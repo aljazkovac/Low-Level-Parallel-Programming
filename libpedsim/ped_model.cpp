@@ -74,28 +74,18 @@ void Ped::Model::recalculate_regions(int x0, int x1, int x2, int x3, int x4) {
 void Ped::Model::create_two_boundaries(int count, int xBound, int boundary_counter) {
   // xBound contains last x
   
-  boundaries.push_back({});
-  for (int j = 0; j < 300; j++) {
-    boundaries[boundary_counter].push_back(0);
-  }
-
   int count2 = count - 1;
   while (agents[count2]->getX() == xBound) {
-    boundaries[boundary_counter][agents[count2]->getY()] = 1;
+    atomic_store(&boundaries[boundary_counter][agents[count2]->getY()], 1);
     count2--;
   }
   boundary_counter++;
-
-  boundaries.push_back({});
-  for (int j = 0; j < 300; j++) {
-    boundaries[boundary_counter].push_back(0);
-  }
 
   printf("size: %d, count: %d\n", agents.size(), count);
   if (count < agents.size()) {
     while(count < agents.size() && agents[count]->getX() == (xBound + 1)) {
       printf("hello\n");
-      boundaries[boundary_counter][agents[count]->getY()] = 1;
+      atomic_store(&boundaries[boundary_counter][agents[count]->getY()], 1);
       count++;
     }
     boundary_counter++;
@@ -163,7 +153,12 @@ void Ped::Model::populate_dynamic_regions() {
 	    plane.push_back(region);
 	  }
 
+	  // if (region.size() == 1) {
+	  //   exit(EXIT_FAILURE);
+	  // }
+
 	  // BOUNDARY ARRAYS --------------------
+	  printf("before create two boundaries\n");
 	  create_two_boundaries(count, xBound, boundary_counter);
 	  boundary_counter = boundary_counter + 2;
 	}
@@ -175,8 +170,6 @@ void Ped::Model::populate_dynamic_regions() {
 	cout << "\n";
 	cout << "Plane size: " << plane.size() << "\n";
 	// DEBUG END
-
-	
 }
 
 void Ped::Model::repopulate_dynamic_regions() {
@@ -184,7 +177,9 @@ void Ped::Model::repopulate_dynamic_regions() {
     region.clear();
   }
   for (auto& boundary: boundaries) {
-    boundary.clear();
+    for (auto& element: boundary){
+      atomic_store(&element, 0);
+    }
   }
   xBounds.clear();
   plane.clear();
@@ -347,9 +342,12 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::OMP) {
 
+	  printf("before repop\n");
 	        repopulate_dynamic_regions();
+		printf("In tick(), after repopulate \n");
 		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
+
 		#pragma omp parallel for
 		for (const auto& region: plane) {
 			for (const auto& agent: region) {
@@ -360,6 +358,7 @@ void Ped::Model::tick()
 			}
 		}
 
+		printf("forloop over\n");
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
@@ -428,7 +427,6 @@ void Ped::Model::tick()
 	      agents[i]->setDest(nextDest);
 	    }
 	  }
-
 	}
 }
 
@@ -440,15 +438,17 @@ void Ped::Model::tick()
 // The same function as move below, only that this one does things atomically, using CAS
 void Ped::Model::move_atomic(Ped::Tagent *agent)
 {
+  int tid = omp_get_thread_num();
 	// Search for neighboring agents
 	set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
-
+	
 	// Retrieve their positions
 	std::vector<std::pair<int, int>> takenPositions;
 	for (std::set<const Ped::Tagent*>::iterator neighborIt = neighbors.begin(); neighborIt != neighbors.end(); ++neighborIt) {
 		std::pair<int, int> position((*neighborIt)->getX(), (*neighborIt)->getY());
 		takenPositions.push_back(position);
 	}
+
 
 	// Compute the three alternative positions that would bring the agent
 	// closer to his desiredPosition, starting with the desiredPosition itself
@@ -481,23 +481,33 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 
 		// If the current position is not yet taken by any neighbor
 		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
-		  // // CAS
-		  // for (int i = 0; i < xBounds.size(); i++) {
-		  //   // even index
-		  //   if (*it.first == get<0>(xBoundary)) {
-		  //     int desiredY = boundaries[i*2][*it.second];
-		  //   }
-		  //   // odd index
-		  //   if (*it.first == get<1>(xBoundary)) {
-		  //     int desiredY = boundaries[i*2+1][*it.second];
-		  //   }
-		  //   compare_and_swap(0, desiredY, 1);
-		  // }
-			// Set the agent's position
-			agent->setX((*it).first);
-			agent->setY((*it).second);
-			changed_pos = true;
-			break;
+		  
+		  // CAS
+		  bool check = false;
+		  int test = 0;
+		  int newval = 0;
+		  for (int i = 0; i < xBounds.size(); i++) {
+		    // even index
+
+		    if ((*it).first == get<0>(xBounds[i])) {
+		      check = boundaries[i*2][(*it).second].compare_exchange_weak(test, newval);
+		    }
+		    // odd index
+		    else if ((*it).first == get<1>(xBounds[i])) {
+		      check = boundaries[i*2+1][(*it).second].compare_exchange_weak(test, newval);
+		    }
+		    else {
+		      check = true;
+		    }
+		  }
+
+		  if (check) {
+		    // Set the agent's position
+		    agent->setX((*it).first);
+		    agent->setY((*it).second);
+		    changed_pos = true;
+		    break;
+		  }
 		}
 	}
 
