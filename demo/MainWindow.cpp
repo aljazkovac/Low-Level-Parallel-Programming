@@ -75,7 +75,7 @@ void MainWindow::paint() {
 			color = Qt::green;
 		}
 		else {
-			color = Qt::red;
+		  color = Qt::red;
 		}
 
 		(*it)->paint(color);

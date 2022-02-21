@@ -350,14 +350,15 @@ void Ped::Model::tick()
 	        repopulate_dynamic_regions();
 		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
-		#pragma omp parallel for
+                #pragma omp parallel for shared(boundaries)
+                #pragma omp critical
 		for (const auto& region: plane) {
-			for (const auto& agent: region) {
-				agent->computeNextDesiredPosition();
-				//agent->setX(agent->getDesiredX());
-				//agent->setY(agent->getDesiredY());
-				move_atomic(agent);
-			}
+		  for (const auto& agent: region) {
+		    agent->computeNextDesiredPosition();
+		    //agent->setX(agent->getDesiredX());
+		    //agent->setY(agent->getDesiredY());
+		    move_atomic(agent);
+		  }
 		}
 
 	}
@@ -481,18 +482,18 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 
 		// If the current position is not yet taken by any neighbor
 		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
-		  // // CAS
-		  // for (int i = 0; i < xBounds.size(); i++) {
-		  //   // even index
-		  //   if (*it.first == get<0>(xBoundary)) {
-		  //     int desiredY = boundaries[i*2][*it.second];
-		  //   }
-		  //   // odd index
-		  //   if (*it.first == get<1>(xBoundary)) {
-		  //     int desiredY = boundaries[i*2+1][*it.second];
-		  //   }
-		  //   compare_and_swap(0, desiredY, 1);
-		  // }
+		  // CAS
+		  for (int i = 0; i < xBounds.size(); i++) {
+		    // even index
+		    if ((*it).first == get<0>(xBounds[i])) {
+		      
+		      int desiredY = boundaries[i*2][(*it).second];
+		    }
+		    // odd index
+		    if ((*it).first == get<1>(xBounds[i])) {
+		      int desiredY = boundaries[i*2+1][(*it).second];
+		    }
+		  }
 			// Set the agent's position
 			agent->setX((*it).first);
 			agent->setY((*it).second);
@@ -592,7 +593,7 @@ void Ped::Model::move(Ped::Tagent *agent)
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
-		}
+		}
 	}
 }
 
