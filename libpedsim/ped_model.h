@@ -102,7 +102,7 @@ namespace Ped{
     std::vector<std::vector<Ped::Tagent*>> plane;
     std::vector<std::tuple<int, int>> xBounds;
     std::vector<std::vector<int>> boundaries2;
-    std::array<std::array<std::atomic<bool>, 400>, 8> boundaries;
+    std::array<std::array<std::atomic<bool>, 150>, 10> boundaries;
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;

@@ -95,7 +95,7 @@ void Ped::Model::create_two_boundaries(int count, int xBound, int boundary_count
 
 void Ped::Model::populate_dynamic_regions() {
 	// Choose max percentage of agents allowed per region
-	float max_per_region = 0.25;
+	float max_per_region = 0.20;
 		
 	// Determine the nr. of agents per region
 	float agents_per_region = std::floor(agents.size() * max_per_region);
@@ -105,11 +105,15 @@ void Ped::Model::populate_dynamic_regions() {
 		
 	// Determine the nr. of regions
 	float nr_regions = std::ceil(agents.size() / agents_per_region);
+	// if (nr_regions > 4) {
+	//   nr_regions = 4;
+	// }
 	std::cout << "Nr of regions: " << nr_regions << "\n";
 		
 	// Sort the agent vector according to the agents' x coordinates
 	std::sort(agents.begin(), agents.end(), less_than_key());
 	int count = 0;
+	
 
 	// Define the boundary between two regions as the x values of rightmost agent in the left
 	// zone and the leftmost agent in the right zone
@@ -348,7 +352,7 @@ void Ped::Model::tick()
 		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
 
-		#pragma omp parallel for
+                #pragma omp parallel for
 		for (const auto& region: plane) {
 			for (const auto& agent: region) {
 				agent->computeNextDesiredPosition();
@@ -484,11 +488,10 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 		  
 		  // CAS
 		  bool check = false;
-		  int test = 0;
-		  int newval = 0;
+		  bool test = false;
+		  bool newval = true;
 		  for (int i = 0; i < xBounds.size(); i++) {
 		    // even index
-
 		    if ((*it).first == get<0>(xBounds[i])) {
 		      check = boundaries[i*2][(*it).second].compare_exchange_weak(test, newval);
 		    }
@@ -513,22 +516,60 @@ void Ped::Model::move_atomic(Ped::Tagent *agent)
 
 	// If no empty alternative position could be found, attempt to back off
 	// But be careful to not walk off screen
-	//srand(time(NULL));
+	// srand(time(NULL));
 
 	if (changed_pos == false && agent->getX() > 0 && agent->getY() > 0) {
 		back_off = std::make_pair(agent->getX()-1, agent->getY()-1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
+		  // CAS
+		  bool check = false;
+		  bool test = false;
+		  bool newval = true;
+		  for (int i = 0; i < xBounds.size(); i++) {
+		    // even index
+		    if (back_off.first == get<0>(xBounds[i])) {
+		      check = boundaries[i*2][back_off.second].compare_exchange_weak(test, newval);
+		    }
+		    // odd index
+		    else if (back_off.first == get<1>(xBounds[i])) {
+		      check = boundaries[i*2+1][back_off.second].compare_exchange_weak(test, newval);
+		    }
+		    else {
+		      check = true;
+		    }
+		  }
+		  if (check) {
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
+		  }
 		}
 	}
 	if (changed_pos == false && agent->getX() < 120 && agent->getY() < 80) {
 		back_off = std::make_pair(agent->getX()+1, agent->getY()+1);
 		if (std::find(takenPositions.begin(), takenPositions.end(), back_off) == takenPositions.end()) {
+		  // CAS
+		  bool check = false;
+		  bool test = false;
+		  bool newval = true;
+		  for (int i = 0; i < xBounds.size(); i++) {
+		    // even index
+		    if (back_off.first == get<0>(xBounds[i])) {
+		      check = boundaries[i*2][back_off.second].compare_exchange_weak(test, newval);
+		    }
+		    // odd index
+		    else if (back_off.first == get<1>(xBounds[i])) {
+		      check = boundaries[i*2+1][back_off.second].compare_exchange_weak(test, newval);
+		    }
+		    else {
+		      check = true;
+		    }
+		  }
+		  if (check) {
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
+		  }
 		}
 	}
 }
@@ -620,7 +661,7 @@ set<const Ped::Tagent*> Ped::Model::getNeighbors(int x, int y, int dist) const {
 
 	int tid = omp_get_thread_num();
 	// Consider only the agents that are within the given distance
-	for (const auto& agent: plane[tid]) {
+	for (const auto& agent: agents) {
 		if (agent->getX() < (x + dist) && agent->getX() > (x - dist) && agent->getY() < (y + dist) && agent->getY() > (y - dist)) {
 			closeby_agents.insert(agent);
 		}
