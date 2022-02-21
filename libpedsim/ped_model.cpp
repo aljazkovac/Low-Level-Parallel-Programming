@@ -313,37 +313,43 @@ void Ped::Model::tick()
 		for (int i = 0; i < plane.size(); i++) {
 			for (const auto& agent: plane[i]) {
 				agent->computeNextDesiredPosition();
-				//agent->setX(agent->getDesiredX());
-				//agent->setY(agent->getDesiredY());
+
 				int currentX = agent->getX();
 				int currentY = agent->getY();
 				auto new_pos = move_atomic(agent);
 				int newX = new_pos.first;
 				int newY = new_pos.second;
-				for (const auto x : xBounds) {
-						//400 is  just a magic number so all y coordinates will fit :)
-						while(1) {
-							if (newX == get<0>(x) || newX == get<1>(x)) {
-								bool old_val = border_occupied[i*400+new_pos.second].load();
-								bool new_val = !old_val;
-								if (border_occupied[i*400+new_pos.second].compare_exchange_weak(old_val, new_val)){
-									moved = true;
-									new_pos = move_atomic(agent);
-									newX = new_pos.first;
-									newY = new_pos.second;
-									break;
-								}
-							}
-							else {
-								break;
-							}
+
+
+				bool on_border = false;
+				while(!on_border) {
+					int offset = 0;
+
+					//Need to try this
+					for (const auto x : xBounds) {
+						if (newX == get<0>(x) || newX == get<1>(x)) {
+							on_border = true;
+							offset = new_pos.second;
+						} else if (newX == get<1>(x)) {
+							on_border = true;
+							offset = new_pos.second + 200;
 						}
+					}
+
+					//400 is  just a magic number so all y coordinates will fit :)
+					bool old_val = border_occupied[i*400+offset].load();
+					// bool new_val = true;
+					if (border_occupied[i*400+offset].compare_exchange_weak(old_val, true)){
+						moved = true;
 						agent->setX(newX);
 						agent->setY(newY);
-						// move(agent);
-
 						break;
+					}
+					new_pos = move_atomic(agent);
+					newX = new_pos.first;
+					newY = new_pos.second;
 				}
+				// move(agent);
 				if (!moved) {
 					move(agent);
 				}

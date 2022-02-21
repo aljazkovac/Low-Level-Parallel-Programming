@@ -103,7 +103,7 @@ namespace Ped{
     std::vector<std::tuple<int, int>> xBounds;
     std::vector<std::vector<std::atomic<bool>>> boundaries;
     // This array is WAY too big, but it should get the job done at least.
-    std::atomic<bool> border_occupied[42000];
+    std::atomic<bool> border_occupied[4200];
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
