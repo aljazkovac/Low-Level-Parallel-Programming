@@ -105,9 +105,6 @@ void Ped::Model::populate_dynamic_regions() {
 		
 	// Determine the nr. of regions
 	float nr_regions = std::ceil(agents.size() / agents_per_region);
-	// if (nr_regions > 4) {
-	//   nr_regions = 4;
-	// }
 	std::cout << "Nr of regions: " << nr_regions << "\n";
 		
 	// Sort the agent vector according to the agents' x coordinates
