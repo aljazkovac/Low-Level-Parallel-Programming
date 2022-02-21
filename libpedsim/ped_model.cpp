@@ -50,10 +50,10 @@ void Ped::Model::populate_regions(int x0, int x1, int x2, int x3, int x4) {
 	}
 
 	// Check if the plane is populated correctly:
-		cout << "Nr. of agents: " << agents.size() << "\n";
-		cout << "Plane size: " << plane.size() << "\n";
+		// cout << "Nr. of agents: " << agents.size() << "\n";
+		// cout << "Plane size: " << plane.size() << "\n";
 		for (std::size_t i = 0; i < plane.size(); ++i) {
-			cout << "Region size: " << plane[i].size() << "\n";
+			// cout << "Region size: " << plane[i].size() << "\n";
 		}
 }
 
@@ -81,16 +81,16 @@ void Ped::Model::create_two_boundaries(int count, int xBound, int boundary_count
   }
   boundary_counter++;
 
-  printf("size: %d, count: %d\n", agents.size(), count);
+  // printf("size: %d, count: %d\n", agents.size(), count);
   if (count < agents.size()) {
     while(count < agents.size() && agents[count]->getX() == (xBound + 1)) {
-      printf("hello\n");
+      // printf("hello\n");
       atomic_store(&boundaries[boundary_counter][agents[count]->getY()], 1);
       count++;
     }
     boundary_counter++;
   }
-  printf("im out!\n");
+  // printf("im out!\n");
 }
 
 void Ped::Model::populate_dynamic_regions() {
@@ -99,16 +99,16 @@ void Ped::Model::populate_dynamic_regions() {
 		
 	// Determine the nr. of agents per region
 	float agents_per_region = std::floor(agents.size() * max_per_region);
-	std::cout << "Max per region: " << max_per_region << "\n"
-		  << "Agents per region: " << agents_per_region << "\n"
-		  << "Nr of agents: " << agents.size() << "\n";
+	// std::cout << "Max per region: " << max_per_region << "\n"
+		  // << "Agents per region: " << agents_per_region << "\n"
+		  // << "Nr of agents: " << agents.size() << "\n";
 		
 	// Determine the nr. of regions
 	float nr_regions = std::ceil(agents.size() / agents_per_region);
 	// if (nr_regions > 4) {
 	//   nr_regions = 4;
 	// }
-	std::cout << "Nr of regions: " << nr_regions << "\n";
+	// std::cout << "Nr of regions: " << nr_regions << "\n";
 		
 	// Sort the agent vector according to the agents' x coordinates
 	std::sort(agents.begin(), agents.end(), less_than_key());
@@ -122,7 +122,7 @@ void Ped::Model::populate_dynamic_regions() {
 
 	int boundary_counter = 0;
 	for (std::size_t i = 0; i < nr_regions; ++i) {
-	  printf("Region iteration: %d\n", i);
+	  // printf("Region iteration: %d\n", i);
 	  std::vector<Ped::Tagent*> region;
 	  
 	  int xBound = 0;
@@ -133,7 +133,7 @@ void Ped::Model::populate_dynamic_regions() {
 	      count++;
 	    }
 	  }
-	  printf("size: %d, counT: %d\n", agents.size(), count);
+	  // printf("size: %d, counT: %d\n", agents.size(), count);
 
 	  // REGION ------------------------
 
@@ -153,7 +153,7 @@ void Ped::Model::populate_dynamic_regions() {
 
 	  // DEBUG
 	  if (region.size() > 0) {
-	    cout << "Region size: " << region.size() << "\n";
+	    // cout << "Region size: " << region.size() << "\n";
 	    plane.push_back(region);
 	  }
 
@@ -162,17 +162,17 @@ void Ped::Model::populate_dynamic_regions() {
 	  // }
 
 	  // BOUNDARY ARRAYS --------------------
-	  printf("before create two boundaries\n");
+	  // printf("before create two boundaries\n");
 	  create_two_boundaries(count, xBound, boundary_counter);
 	  boundary_counter = boundary_counter + 2;
 	}
 
 	//DEBUG BEGIN
 	for (const auto x : xBounds) {
-	  printf("(%d, %d), ", get<0>(x), get<1>(x));
+	  // printf("(%d, %d), ", get<0>(x), get<1>(x));
 	}
-	cout << "\n";
-	cout << "Plane size: " << plane.size() << "\n";
+	// cout << "\n";
+	// cout << "Plane size: " << plane.size() << "\n";
 	// DEBUG END
 }
 
@@ -346,9 +346,9 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::OMP) {
 
-	  printf("before repop\n");
+	  // printf("before repop\n");
 	        repopulate_dynamic_regions();
-		printf("In tick(), after repopulate \n");
+		// printf("In tick(), after repopulate \n");
 		// Parallellize the outer loop only
 		omp_set_num_threads(plane.size());
 
@@ -362,7 +362,7 @@ void Ped::Model::tick()
 			}
 		}
 
-		printf("forloop over\n");
+		// printf("forloop over\n");
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
@@ -643,7 +643,8 @@ void Ped::Model::move(Ped::Tagent *agent)
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
-		}
+		}
+
 	}
 }
 
