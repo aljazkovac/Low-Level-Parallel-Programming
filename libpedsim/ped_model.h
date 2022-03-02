@@ -16,6 +16,7 @@
 #include <set>
 
 #include "ped_agent.h"
+#include <atomic>
 
 // Thread function
 namespace Ped{
@@ -28,7 +29,14 @@ namespace Ped{
   class Model
   {
   public:
+    // -------------- A3 ------------------------------------------------
+    void populate_regions(int x0, int x1, int x2, int x3, int x4);
+    void recalculate_regions(int x0, int x1, int x2, int x3, int x4);
 
+    void populate_dynamic_regions();
+    void repopulate_dynamic_regions();
+    void create_two_boundaries(int count, int xBound, int boundary_counter);
+    // ------------------------------------------------------------------
     // Sets everything up
     void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation, int number_of_threads = 2);		
 	
@@ -68,7 +76,16 @@ namespace Ped{
     float *destRarray;
     
     int *destReached;
-    
+
+    // Determine the region coordinates (4 regions)
+    // I am basing this on the max coordinates I have seen in the 
+    // hugeScenario
+    int x0;
+    int x1;
+    int x2;
+    int x3;
+    int x4;	
+
     // The agents in this scenario
     std::vector<Tagent*> agents;
 
@@ -77,6 +94,15 @@ namespace Ped{
 		
     // Moves an agent towards its next position
     void move(Ped::Tagent *agent);
+    
+    // Moves an agent towards its next destination in an atomic way
+    void move_atomic(Ped::Tagent *agent);
+
+    // The plane for Assignment 3
+    std::vector<std::vector<Ped::Tagent*>> plane;
+    std::vector<std::tuple<int, int>> xBounds;
+    std::vector<std::vector<int>> boundaries2;
+    std::array<std::array<std::atomic<bool>, 150>, 10> boundaries;
 
     //--------------- CUDA -----------------
     int NUM_BLOCKS;
@@ -88,6 +114,9 @@ namespace Ped{
 
     // Returns the set of neighboring agents for the specified position
     set<const Ped::Tagent*> getNeighbors(int x, int y, int dist) const;
+
+    
+
 
     ////////////
     /// Everything below here won't be relevant until Assignment 4
