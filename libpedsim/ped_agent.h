@@ -37,6 +37,9 @@ namespace Ped {
 		int getDesiredX() const { return desiredPositionX; }
 		int getDesiredY() const { return desiredPositionY; }
 
+	        int desiredPositionX;
+		int desiredPositionY;
+
 		// Sets the agent's position
 		void setX(int newX) { *x = newX; }
 		void setY(int newY) { *y = newY; }
@@ -77,8 +80,7 @@ namespace Ped {
 		int* y;
 
 		// The agent's desired next position
-		int desiredPositionX;
-		int desiredPositionY;
+		
 
 		// The last destination
 		Twaypoint* lastDestination;

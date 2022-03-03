@@ -1,6 +1,6 @@
 // Created for Low Level Parallel Programming 2017
 //
-// Implements the heatmap functionality. 
+// Implements the heatmap functionality.
 //
 #include "ped_model.h"
 
@@ -20,10 +20,10 @@ void Ped::Model::setupHeatmapSeq()
 	int *bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
 
 	heatmap = (int**)malloc(SIZE*sizeof(int*));
-
 	scaled_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 	blurred_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 
+	// Simon: what is this
 	for (int i = 0; i < SIZE; i++)
 	{
 		heatmap[i] = hm + SIZE*i;
@@ -85,6 +85,7 @@ void Ped::Model::updateHeatmapSeq()
 					scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
 				}
 			}
+
 		}
 	}
 
@@ -98,7 +99,7 @@ void Ped::Model::updateHeatmapSeq()
 	};
 
 #define WEIGHTSUM 273
-	// Apply gaussian blurfilter		       
+	// Apply gaussian blurfilter
 	for (int i = 2; i < SCALED_SIZE - 2; i++)
 	{
 		for (int j = 2; j < SCALED_SIZE - 2; j++)

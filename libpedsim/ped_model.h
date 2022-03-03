@@ -137,6 +137,7 @@ namespace Ped{
 
     void setupHeatmapSeq();
     void updateHeatmapSeq();
+    void updateHeatmapCuda(std::vector<Ped::Tagent*> agents, int **heatmap);
   };
 }
 #endif

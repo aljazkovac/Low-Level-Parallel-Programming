@@ -10,6 +10,7 @@
 #include "ped_model.h"
 #include "cuda_testkernel.h"
 #include "cuda_tick.h"
+#include "cuda_heatmap.h"
 #include <iostream>
 #include <stack>
 #include <algorithm>
@@ -213,24 +214,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	
 
 	if (this->implementation == Ped::OMP) {
-	        // x0 = 0;
-		// x1 = 46;
-		// x2 = 92;
-		// x3 = 138;
-		// x4 = 184;
-
-		// // Initialize the plane vector and the regions vectors
-		// for (std::size_t i = 0; i < 4; ++i) {
-		// 	std::vector<Ped::Tagent*> region;
-		// 	plane.push_back(region);
-		// }
-
-		// // Populate the vectors of regions with agents and the
-		// // plane vector with vectors of regions
-		// populate_regions(x0,x1,x2,x3,x4);
-
-		// ---------- Dynamic regions ----------------
+	  // ---------- Dynamic regions ----------------
 	  populate_dynamic_regions();
+
+	  // Heatmap
+	  THREADS_PER_BLOCK = 64;
+	  int array_size = agents.size() + THREADS_PER_BLOCK - agents.size() % THREADS_PER_BLOCK;
+	  desiredX = (int *) malloc(array_size * sizeof(int));
+	  desiredY = (int *) malloc(array_size * sizeof(int));
+
+	  allocCuda(array_size);
 	}
 
 
@@ -324,7 +317,10 @@ void Ped::Model::tick()
 			//agent->setY(agent->getDesiredY());
 			move(agent);
 		}
+		updateHeatmapSeq();
 	}
+	
+	
 	else if (this->implementation == Ped::CTHREADS) {
 		std::vector<std::thread> threads;
 		int chunk_size = agents.size() / this->number_of_threads;
@@ -357,7 +353,19 @@ void Ped::Model::tick()
 				move_atomic(agent);
 			}
 		}
-		updateHeatMapSeq();
+		#pragma omp parallel for
+		for (int i = 0; i<agents.size(); i++) {
+		  desiredX[i] = agents[i]->getDesiredX();
+		  desiredY[i] = agents[i]->getDesiredY();
+		}
+		updateHeatmapCuda(desiredX, desiredY, heatmap, scaled_heatmap);
+
+                #pragma omp parallel for
+		for (int i = 0; i<agents.size(); i++) {
+		  agents[i]->desiredPositionX = desiredX[i];
+		  agents[i]->desiredPositionY = desiredY[i];
+		}
+		
 
 	}
 	else if(this->implementation == Ped::SIMD) {
