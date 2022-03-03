@@ -343,7 +343,6 @@ void Ped::Model::tick()
 	}
 	else if (this->implementation == Ped::OMP) {
 
-	  printf("before repop\n");
 	        repopulate_dynamic_regions();
 		printf("In tick(), after repopulate \n");
 		// Parallellize the outer loop only
@@ -358,8 +357,8 @@ void Ped::Model::tick()
 				move_atomic(agent);
 			}
 		}
+		updateHeatMapSeq();
 
-		printf("forloop over\n");
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
