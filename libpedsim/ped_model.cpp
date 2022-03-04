@@ -223,7 +223,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  desiredX = (int *) malloc(array_size * sizeof(int));
 	  desiredY = (int *) malloc(array_size * sizeof(int));
 
-	  allocCuda(array_size);
+	//   allocCuda(array_size);
 	}
 
 
@@ -647,7 +647,8 @@ void Ped::Model::move(Ped::Tagent *agent)
 			agent->setX(back_off.first);
 			agent->setY(back_off.second);
 			changed_pos = true;
-		}
+		}
+
 	}
 }
 

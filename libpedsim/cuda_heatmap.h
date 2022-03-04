@@ -6,11 +6,7 @@
 #include "ped_model.h"
 
 
-int *dev_desiredX;
-int *dev_desiredY;
-int **dev_heatmap;
-int **dev_scaled_heatmap;
 
-cudaError_t allocCuda();
-cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap);
+cudaError_t allocCuda(int size);
+cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap, int **scaled_heatmap);
 __global__ void creationKernel(int *desiredX, int *desiredY, int **heatmap);
