@@ -362,8 +362,8 @@ void Ped::Model::tick()
 		}
 
 		// Sanity checks
-		// heatmap[desiredX[0]][desiredY[0]] = 42;
-		// cout << "Heatmap val pre: " << heatmap[desiredX[0]][desiredY[0]];
+		// bhm[desiredY[0]*SIZE[desiredX[0]] = 42;
+		// cout << "Heatmap val pre: " <<bhm[desiredX[0]][desiredY[0]];
 
 		updateHeatmapCuda(desiredX, desiredY, hm, shm, bhm, agents.size());
 
