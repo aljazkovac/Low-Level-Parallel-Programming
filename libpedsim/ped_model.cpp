@@ -358,21 +358,20 @@ void Ped::Model::tick()
 				move_atomic(region[i]);
 			}
 		}
-		// #pragma omp parallel for
-		// for (int i = 0; i<agents.size(); i++) {
-		//   desiredX[i] = agents[i]->getDesiredX();
-		//   desiredY[i] = agents[i]->getDesiredY();
-		// }
+		#pragma omp parallel for
+		for (int i = 0; i<agents.size(); i++) {
+		  desiredX[i] = agents[i]->getDesiredX();
+		  desiredY[i] = agents[i]->getDesiredY();
+		}
 
-		// FLATTEN HEATMAP
+		// Sanity checks
+		heatmap[desiredX[0]][desiredY[0]] = 42;
+		cout << "Heatmap val pre: " << heatmap[desiredX[0]][desiredY[0]];
 
-		// for (int i = 0; i < SIZE; i++) {
-		// 	for (int j = 0; i < SIZE; j++) {
-		// 		flat_heatmap[i * SIZE + j] = heatmap[i][j];
-		// 	}
-		// }
+		updateHeatmapCuda(desiredX, desiredY, heatmap, scaled_heatmap, agents.size());
 
-		// updateHeatmapCuda(desiredX, desiredY, heatmap, scaled_heatmap, agents.size());
+		// Sanity check prints
+		cout << "|| post: " << heatmap[desiredX[0]][desiredY[0]] << " (should be different on success!) \n";
 
 
         //         #pragma omp parallel for

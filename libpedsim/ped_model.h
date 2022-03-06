@@ -11,6 +11,9 @@
 #ifndef _ped_model_h_
 #define _ped_model_h_
 
+#pragma once
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 #include <vector>
 #include <map>
 #include <set>
@@ -143,6 +146,7 @@ namespace Ped{
     void setupHeatmapSeq();
     void updateHeatmapSeq();
     // void updateHeatmapCuda(std::vector<Ped::Tagent*> agents, int **heatmap);
+    // cudaError_t updateHeatmapCuda(int size);
   };
 }
 #endif
