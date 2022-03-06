@@ -96,7 +96,7 @@ void Ped::Model::create_two_boundaries(int count, int xBound, int boundary_count
 
 void Ped::Model::populate_dynamic_regions() {
 	// Choose max percentage of agents allowed per region
-	float max_per_region = 0.20;
+	float max_per_region = 0.33;
 		
 	// Determine the nr. of agents per region
 	float agents_per_region = std::floor(agents.size() * max_per_region);
@@ -223,8 +223,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  int array_size = agents.size() + THREADS_PER_BLOCK - agents.size() % THREADS_PER_BLOCK;
 	  desiredX = (int *) malloc(array_size * sizeof(int));
 	  desiredY = (int *) malloc(array_size * sizeof(int));
-	  flat_heatmap = (int *) malloc(SIZE * SIZE * sizeof(int));
-
 	//   allocCuda(array_size);
 	}
 
@@ -322,7 +320,6 @@ void Ped::Model::tick()
 		updateHeatmapSeq();
 	}
 	
-	
 	else if (this->implementation == Ped::CTHREADS) {
 		std::vector<std::thread> threads;
 		int chunk_size = agents.size() / this->number_of_threads;
@@ -365,14 +362,13 @@ void Ped::Model::tick()
 		}
 
 		// Sanity checks
-		heatmap[desiredX[0]][desiredY[0]] = 42;
-		cout << "Heatmap val pre: " << heatmap[desiredX[0]][desiredY[0]];
+		// heatmap[desiredX[0]][desiredY[0]] = 42;
+		// cout << "Heatmap val pre: " << heatmap[desiredX[0]][desiredY[0]];
 
-		updateHeatmapCuda(desiredX, desiredY, heatmap, scaled_heatmap, agents.size());
+		updateHeatmapCuda(desiredX, desiredY, hm, shm, bhm, agents.size());
 
-		// Sanity check prints
-		cout << "|| post: " << heatmap[desiredX[0]][desiredY[0]] << " (should be different on success!) \n";
-
+		// // Sanity check prints
+		// cout << "|| post: " << heatmap[desiredX[0]][desiredY[0]] << " (should be different on success!) \n";
 
         //         #pragma omp parallel for
 		// for (int i = 0; i<agents.size(); i++) {

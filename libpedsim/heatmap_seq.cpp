@@ -15,15 +15,15 @@ using namespace std;
 // Sets up the heatmap
 void Ped::Model::setupHeatmapSeq()
 {
-	int *hm = (int*)calloc(SIZE*SIZE, sizeof(int));
-	int *shm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
-	int *bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
+	hm = (int*)calloc(SIZE*SIZE, sizeof(int));
+	printf("hm[0]: %d\n", hm[0]);
+	shm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
+	bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
 
 	heatmap = (int**)malloc(SIZE*sizeof(int*));
 	scaled_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 	blurred_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 
-	// Simon: what is this
 	for (int i = 0; i < SIZE; i++)
 	{
 		heatmap[i] = hm + SIZE*i;

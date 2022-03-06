@@ -133,20 +133,19 @@ namespace Ped{
 #define SCALED_SIZE SIZE*CELLSIZE
 
     // The heatmap representing the density of agents
+    int * hm;
     int ** heatmap;
 
-    int *flat_heatmap;
-
     // The scaled heatmap that fits to the view
+    int * shm;
     int ** scaled_heatmap;
 
     // The final heatmap: blurred and scaled to fit the view
+    int * bhm;
     int ** blurred_heatmap;
 
     void setupHeatmapSeq();
     void updateHeatmapSeq();
-    // void updateHeatmapCuda(std::vector<Ped::Tagent*> agents, int **heatmap);
-    // cudaError_t updateHeatmapCuda(int size);
   };
 }
 #endif
