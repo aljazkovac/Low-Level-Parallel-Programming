@@ -3,17 +3,20 @@
 #include "cuda_heatmap.h"
 #include <stdio.h>
 
-__global__ void creationKernel(int *desiredX, int *desiredY, int **heatmap)
+__global__ void creationKernel(int *desiredX, int *desiredY, int *heatmap)
 {
   int i = threadIdx.x;
+
+  // desiredX[i] += 10;
 
   int x = desiredX[i];
   int y = desiredY[i];
 
   if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {}
   else {
-    atomicAdd(&heatmap[y][x], 40);
+    atomicAdd(&heatmap[x], 40);
   }
+  atomicAdd(&heatmap[2], 40);
 }
 
 __global__ void scalingKernel(int **heatmap, int **scaled_heatmap)
@@ -37,7 +40,7 @@ __global__ void scalingKernel(int **heatmap, int **scaled_heatmap)
 /* } */
 
 // Calculates and updates x/y positions, checks if agent has reached destination -> destReached
-cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap, int **scaled_heatmap)
+cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap, int **scaled_heatmap, int agents_size)
 {
   // int agents_size = agents.size();
   cudaError_t cudaStatus;
@@ -51,41 +54,41 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap, int *
 
   int *dev_desiredX;
   int *dev_desiredY;
-  int **dev_heatmap;
+  int *dev_heatmap;
   int **dev_scaled_heatmap;
 
   dim3 threadsPerBlock(16,16); // 256 threads per block
   dim3 numBlocks(SIZE/threadsPerBlock.x, SIZE/threadsPerBlock.y);
   
-  cudaStatus = cudaSetDevice(0);
-  if (cudaStatus != cudaSuccess) {
-    fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-    fprintf(stderr, "%s.\n", cudaGetErrorString(cudaGetLastError()));
-    goto Error;
-  }
+  // cudaStatus = cudaSetDevice(0);
+  // if (cudaStatus != cudaSuccess) {
+  //   fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+  //   fprintf(stderr, "%s.\n", cudaGetErrorString(cudaGetLastError()));
+  //   goto Error;
+  // }
 
   // Allocate GPU buffers for agents
-  cudaStatus = cudaMalloc((void **)&dev_desiredX, size * sizeof(int));
+  cudaStatus = cudaMalloc((void **)&dev_desiredX, agents_size * sizeof(int));
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "dx cudaMalloc failed!"); goto Error;}
-  cudaStatus = cudaMalloc((void **)&dev_desiredY, size * sizeof(int));
+  cudaStatus = cudaMalloc((void **)&dev_desiredY, agents_size * sizeof(int));
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
   cudaStatus = cudaMalloc((void **)&dev_heatmap, SIZE * sizeof(int));
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
-  cudaStatus = cudaMalloc((void **)&dev_scaled_heatmap, SIZE * sizeof(int));
-  if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
+  // cudaStatus = cudaMalloc((void **)&dev_scaled_heatmap, SIZE * sizeof(int));
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
   
   // Copy input vectors from host memory to GPU buffers
-  cudaStatus = cudaMemcpy(dev_desiredX, desiredX, size * sizeof(int), cudaMemcpyHostToDevice);
+  cudaStatus = cudaMemcpy(dev_desiredX, desiredX, agents_size * sizeof(int), cudaMemcpyHostToDevice);
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
-  cudaStatus = cudaMemcpy(dev_desiredY, desiredY, size * sizeof(int), cudaMemcpyHostToDevice);
+  cudaStatus = cudaMemcpy(dev_desiredY, desiredY, agents_size * sizeof(int), cudaMemcpyHostToDevice);
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
   cudaStatus = cudaMemcpy(dev_heatmap, heatmap, SIZE * sizeof(int), cudaMemcpyHostToDevice);
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
-  cudaStatus = cudaMemcpy(dev_scaled_heatmap, scaled_heatmap, SIZE * sizeof(int), cudaMemcpyHostToDevice);
-  if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
+  // cudaStatus = cudaMemcpy(dev_scaled_heatmap, scaled_heatmap, SIZE * sizeof(int), cudaMemcpyHostToDevice);
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
 
   // Launch Kernel on the GPU with one thread for each element
-  creationKernel <<<NUM_BLOCKS, THREADS_PER_BLOCK>>> (dev_desiredX, dev_desiredX, dev_heatmap);
+  creationKernel <<<1, SIZE>>> (dev_desiredX, dev_desiredX, dev_heatmap);
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "creationKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
 
@@ -95,31 +98,31 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap, int *
     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus); goto Error;
   }
   
-  scalingKernel <<<numBlocks, threadsPerBlock>>> (dev_heatmap, dev_scaled_heatmap);
-  cudaStatus = cudaGetLastError();
-  if (cudaStatus != cudaSuccess) {fprintf(stderr, "scalingKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
+  // scalingKernel <<<numBlocks, threadsPerBlock>>> (dev_heatmap, dev_scaled_heatmap);
+  // cudaStatus = cudaGetLastError();
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "scalingKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
 
   // Synchronize
-  cudaStatus = cudaDeviceSynchronize();
-  if (cudaStatus != cudaSuccess) {
-    fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus); goto Error;
-  }
+  // cudaStatus = cudaDeviceSynchronize();
+  // if (cudaStatus != cudaSuccess) {
+  //   fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus); goto Error;
+  // }
 
   // Copy data from device to host
-  cudaStatus = cudaMemcpy(desiredX, dev_desiredX, size * sizeof(int), cudaMemcpyDeviceToHost);
-  if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
-  cudaStatus = cudaMemcpy(desiredY, dev_desiredY, size * sizeof(int), cudaMemcpyDeviceToHost);
-  if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
+  // cudaStatus = cudaMemcpy(desiredX, dev_desiredX, agents_size * sizeof(int), cudaMemcpyDeviceToHost);
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
+  // cudaStatus = cudaMemcpy(desiredY, dev_desiredY, size * sizeof(int), cudaMemcpyDeviceToHost);
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
   cudaStatus = cudaMemcpy(heatmap, dev_heatmap, SIZE * sizeof(int), cudaMemcpyDeviceToHost);
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
-  cudaStatus = cudaMemcpy(heatmap, dev_scaled_heatmap, SIZE * sizeof(int), cudaMemcpyDeviceToHost);
-  if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
+  // cudaStatus = cudaMemcpy(heatmap, dev_scaled_heatmap, SIZE * sizeof(int), cudaMemcpyDeviceToHost);
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy failed!"); goto Error;}
 
  Error:
-  cudaFree(dev_desiredX);
-  cudaFree(dev_desiredY);
-  cudaFree(dev_heatmap);
-  cudaFree(dev_scaled_heatmap);
+  // cudaFree(dev_desiredX);
+  // cudaFree(dev_desiredY);
+  // cudaFree(dev_heatmap);
+  // cudaFree(dev_scaled_heatmap);
   /* cudaFree(dev_destReached); */
   if (cudaStatus != 0){
     fprintf(stderr, "Cuda does not seem to be working properly.\n"); // This is not a good thing
@@ -140,8 +143,8 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int **heatmap, int *
 //   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
 //   cudaStatus = cudaMalloc((void **)&dev_desiredY, size * sizeof(int));
 //   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
-//   cudaStatus = cudaMalloc((void **)&dev_heatmap, SIZE * sizeof(int));
-//   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
+  // cudaStatus = cudaMalloc((void **)&dev_heatmap, SIZE * sizeof(int));
+  // if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
 //   cudaStatus = cudaMalloc((void **)&dev_scaled_heatmap, SIZE * sizeof(int));
 //   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMalloc failed!"); goto Error;}
   

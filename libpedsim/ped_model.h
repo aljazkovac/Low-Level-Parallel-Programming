@@ -132,6 +132,8 @@ namespace Ped{
     // The heatmap representing the density of agents
     int ** heatmap;
 
+    int *flat_heatmap;
+
     // The scaled heatmap that fits to the view
     int ** scaled_heatmap;
 

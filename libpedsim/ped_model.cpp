@@ -127,7 +127,8 @@ void Ped::Model::populate_dynamic_regions() {
 	  for (std::size_t j = 0; j < agents_per_region; ++j) {
 	    if (count < agents.size()) {
 	      region.push_back(agents[count]);
-	      xBound = agents[count]->getX();
+		//    This line segfaults!!
+	    //   xBound = agents[count]->getX();
 	      count++;
 	    }
 	  }
@@ -222,6 +223,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  int array_size = agents.size() + THREADS_PER_BLOCK - agents.size() % THREADS_PER_BLOCK;
 	  desiredX = (int *) malloc(array_size * sizeof(int));
 	  desiredY = (int *) malloc(array_size * sizeof(int));
+	  flat_heatmap = (int *) malloc(SIZE * SIZE * sizeof(int));
 
 	//   allocCuda(array_size);
 	}
@@ -346,25 +348,38 @@ void Ped::Model::tick()
 
                 #pragma omp parallel for
 		for (const auto& region: plane) {
-			for (const auto& agent: region) {
-				agent->computeNextDesiredPosition();
+			// for (const auto& agent: region) {
+			for (int i = 0; i < region.size(); i++) {
+				region[i]->computeNextDesiredPosition();
+				// desiredX[i] = agent->getDesiredX();
+				// desiredY[i] = agent->getDesiredY();
 				//agent->setX(agent->getDesiredX());
 				//agent->setY(agent->getDesiredY());
-				move_atomic(agent);
+				move_atomic(region[i]);
 			}
 		}
-		#pragma omp parallel for
-		for (int i = 0; i<agents.size(); i++) {
-		  desiredX[i] = agents[i]->getDesiredX();
-		  desiredY[i] = agents[i]->getDesiredY();
-		}
-		updateHeatmapCuda(desiredX, desiredY, heatmap, scaled_heatmap);
+		// #pragma omp parallel for
+		// for (int i = 0; i<agents.size(); i++) {
+		//   desiredX[i] = agents[i]->getDesiredX();
+		//   desiredY[i] = agents[i]->getDesiredY();
+		// }
 
-                #pragma omp parallel for
-		for (int i = 0; i<agents.size(); i++) {
-		  agents[i]->desiredPositionX = desiredX[i];
-		  agents[i]->desiredPositionY = desiredY[i];
-		}
+		// FLATTEN HEATMAP
+
+		// for (int i = 0; i < SIZE; i++) {
+		// 	for (int j = 0; i < SIZE; j++) {
+		// 		flat_heatmap[i * SIZE + j] = heatmap[i][j];
+		// 	}
+		// }
+
+		// updateHeatmapCuda(desiredX, desiredY, heatmap, scaled_heatmap, agents.size());
+
+
+        //         #pragma omp parallel for
+		// for (int i = 0; i<agents.size(); i++) {
+		//   agents[i]->desiredPositionX = desiredX[i];
+		//   agents[i]->desiredPositionY = desiredY[i];
+		// }
 		
 
 	}
