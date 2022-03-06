@@ -19,8 +19,14 @@ __global__ void creationKernel(int *desiredX, int *desiredY, int *hm)
 
 __global__ void scalingKernel(int *hm, int *shm)
 {
+  __shared__ int shm_temp[16 * 16 * CELLSIZE * CELLSIZE];
   int x = blockDim.x * blockIdx.x + threadIdx.x;
   int y = blockDim.y * blockIdx.y + threadIdx.y;
+
+  int x_temp = threadIdx.x;
+  int y_temp = threadIdx.y;
+
+  int SMALL_SCALED_SIZE = 16 * CELLSIZE;
 
   hm[y*SIZE + x] = (int)round(hm[y*SIZE + x] * 0.80);
   hm[y*SIZE + x] = hm[y*SIZE + x] < 255 ? hm[y*SIZE + x] : 255;
@@ -29,8 +35,15 @@ __global__ void scalingKernel(int *hm, int *shm)
     {
       for (int cellX = 0; cellX < CELLSIZE; cellX++)
 	{
-	  //scaled_heatmap[y*CELLSIZE + cellY][x*CELLSIZE + cellX]
-	  shm[(y * CELLSIZE + cellY)*SCALED_SIZE + (x * CELLSIZE + cellX)] = value;
+	  shm_temp[(y_temp * CELLSIZE + cellY)*SMALL_SCALED_SIZE + (x_temp * CELLSIZE + cellX)] = value;
+	}
+    }
+  __syncthreads();
+  for (int cellY = 0; cellY < CELLSIZE; cellY++)
+    {
+      for (int cellX = 0; cellX < CELLSIZE; cellX++)
+	{
+	  shm[(y * CELLSIZE + cellY)*SCALED_SIZE + (x * CELLSIZE + cellX)] = shm_temp[(y_temp * CELLSIZE + cellY)*SMALL_SCALED_SIZE + (x_temp * CELLSIZE + cellX)];
 	}
     }
 }
@@ -75,6 +88,11 @@ __global__ void blurKernel(int *shm, int *bhm)
 cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, int *bhm, int agents_size)
 {
   cudaError_t cudaStatus;
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  float milliseconds = 0;
+
 
   // int NUM_BLOCKS = 2048;
   // int THREADS_PER_BLOCK = 512;
@@ -120,21 +138,36 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
   cudaStatus = cudaMemcpy(dev_bhm, bhm, SCALED_SIZE * SCALED_SIZE * sizeof(int), cudaMemcpyHostToDevice);
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "cudaMemcpy shm to device failed!"); goto Error;}
 
+  
+
   // Launch Kernel on the GPU with one thread for each element
   // Set 10 blocks for hugeScenario.xml
+  cudaEventRecord(start);
   creationKernel <<<10, agents_size/10>>> (dev_desiredX, dev_desiredY, dev_hm);
+  cudaEventRecord(stop);
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "creationKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
+
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  printf("creationKernel ms: %f\n", milliseconds);
 
   // Synchronize
   cudaStatus = cudaDeviceSynchronize();
   if (cudaStatus != cudaSuccess) {
     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching creationKernel!\n", cudaStatus); goto Error;
   }
-  
+
+  cudaEventRecord(start);
   scalingKernel <<<numBlocks, threadsPerBlock>>> (dev_hm, dev_shm);
+  cudaEventRecord(stop);
+  
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "scalingKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
+
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  printf("scaleKernel ms: %f\n", milliseconds);
 
   // Synchronize
   cudaStatus = cudaDeviceSynchronize();
@@ -143,9 +176,15 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
   }
 
   // Blur filter
+  cudaEventRecord(start);
   blurKernel <<<numBlocks, threadsPerBlock>>> (dev_shm, dev_bhm);
+  cudaEventRecord(stop);
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "blurKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
+
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  printf("blurKernel ms: %f\n", milliseconds);
 
   // Copy data from device to host
   cudaStatus = cudaMemcpy(hm, dev_hm, SIZE * SIZE * sizeof(int), cudaMemcpyDeviceToHost);

@@ -317,7 +317,13 @@ void Ped::Model::tick()
 			//agent->setY(agent->getDesiredY());
 			move(agent);
 		}
+		clock_t start, stop;
+		start = clock();
 		updateHeatmapSeq();
+		stop = clock();
+		double time = float(stop - start)/CLOCKS_PER_SEC;
+		printf("sequential [s]: %f\n", time);
+
 	}
 	
 	else if (this->implementation == Ped::CTHREADS) {
