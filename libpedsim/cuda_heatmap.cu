@@ -150,7 +150,7 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
 
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&milliseconds, start, stop);
-  printf("creationKernel ms: %f\n", milliseconds);
+  //printf("creationKernel ms: %f\n", milliseconds);
 
   // Synchronize
   cudaStatus = cudaDeviceSynchronize();
@@ -167,7 +167,7 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
 
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&milliseconds, start, stop);
-  printf("scaleKernel ms: %f\n", milliseconds);
+  //printf("scaleKernel ms: %f\n", milliseconds);
 
   // Synchronize
   cudaStatus = cudaDeviceSynchronize();
@@ -184,7 +184,7 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
 
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&milliseconds, start, stop);
-  printf("blurKernel ms: %f\n", milliseconds);
+  //printf("blurKernel ms: %f\n", milliseconds);
 
   // Copy data from device to host
   cudaStatus = cudaMemcpy(hm, dev_hm, SIZE * SIZE * sizeof(int), cudaMemcpyDeviceToHost);

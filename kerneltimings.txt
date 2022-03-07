@@ -1,0 +1,19 @@
+SHARED MEM
+
+creationKernel ms: 0.016352
+scaleKernel ms: 1.628288
+blurKernel ms: 0.184896
+
+Running reference version...
+Reference time: 159507 milliseconds, 0.313466 Frames Per Second.
+Note: removed 42 duplicates from scenario.
+Running target version...
+Target time: 6966 milliseconds, 7.17772 Frames Per Second.
+
+
+Speedup: 22.8979
+
+
+--------------------------------
+
+WITHOUT SHARED MEM
