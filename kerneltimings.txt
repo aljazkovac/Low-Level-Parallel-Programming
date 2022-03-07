@@ -1,19 +1,58 @@
 SHARED MEM
 
+1.scenario.xml
+
+ ---- Kernel timings ----
 creationKernel ms: 0.016352
 scaleKernel ms: 1.628288
 blurKernel ms: 0.184896
 
-Running reference version...
+ ---- Function timings ----
+total time for updateHeatmapCuda(): 0.14 seconds
+total time for updateHeatmapSeq(): 3.22 seconds
+
+ ---- Timing mode ----
 Reference time: 159507 milliseconds, 0.313466 Frames Per Second.
-Note: removed 42 duplicates from scenario.
-Running target version...
 Target time: 6966 milliseconds, 7.17772 Frames Per Second.
-
-
 Speedup: 22.8979
 
+2. hugeScenario.xml
 
---------------------------------
+ ---- Kernel timings ----
+creationKernel ms: 0.014176
+scaleKernel ms: 1.627616
+blurKernel ms: 0.184192
+
+ ---- Function timings ----
+total time for updateHeatmapCuda(): 0.14 seconds
+total time for updateHeatmapSeq(): 3.31 seconds
+
+Reference time: 173864 milliseconds, 0.287581 Frames Per Second.
+Target time: 11978 milliseconds, 4.17432 Frames Per Second.
+Speedup: 14.5153
+
+
+----------------------------------------------------------
 
 WITHOUT SHARED MEM
+
+1. scenario.xml
+
+creationKernel ms: 0.014304
+scaleKernel ms: 1.714016
+blurKernel ms: 0.184288
+
+Reference time: 163247 milliseconds, 0.306284 Frames Per Second.
+Target time: 6933 milliseconds, 7.21189 Frames Per Second.
+
+Speedup: 23.5464
+
+2. hugeScenario.xml
+
+creationKernel ms: 0.014592
+scaleKernel ms: 1.713568
+blurKernel ms: 0.184192
+
+Reference time: 175567 milliseconds, 0.284792 Frames Per Second.
+Target time: 12066 milliseconds, 4.14388 Frames Per Second.
+Speedup: 14.5506
