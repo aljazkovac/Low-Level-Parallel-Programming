@@ -75,6 +75,10 @@ __global__ void blurKernel(int *shm, int *bhm)
 cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, int *bhm, int agents_size)
 {
   cudaError_t cudaStatus;
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  float milliseconds = 0;
 
   // int NUM_BLOCKS = 2048;
   // int THREADS_PER_BLOCK = 512;
@@ -122,20 +126,33 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
 
   // Launch Kernel on the GPU with one thread for each element
   // Set 10 blocks for hugeScenario.xml
+  cudaEventRecord(start);
   creationKernel <<<10, agents_size/10>>> (dev_desiredX, dev_desiredY, dev_hm);
+  cudaEventRecord(stop);
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "creationKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
+
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  //  printf("creationKernel ms: %f\n", milliseconds);
 
   // Synchronize
   cudaStatus = cudaDeviceSynchronize();
   if (cudaStatus != cudaSuccess) {
     fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching creationKernel!\n", cudaStatus); goto Error;
   }
-  
+
+    cudaEventRecord(start);
   scalingKernel <<<numBlocks, threadsPerBlock>>> (dev_hm, dev_shm);
+  cudaEventRecord(stop);
+  
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "scalingKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
 
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  //  printf("scaleKernel ms: %f\n", milliseconds);
+  
   // Synchronize
   cudaStatus = cudaDeviceSynchronize();
   if (cudaStatus != cudaSuccess) {
@@ -143,9 +160,16 @@ cudaError_t updateHeatmapCuda(int *desiredX, int *desiredY, int *hm, int *shm, i
   }
 
   // Blur filter
+    // Blur filter
+  cudaEventRecord(start);
   blurKernel <<<numBlocks, threadsPerBlock>>> (dev_shm, dev_bhm);
+  cudaEventRecord(stop);
   cudaStatus = cudaGetLastError();
   if (cudaStatus != cudaSuccess) {fprintf(stderr, "blurKernel launch failed: %s\n", cudaGetErrorString(cudaStatus)); goto Error;}
+
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  //  printf("blurKernel ms: %f\n", milliseconds);
 
   // Copy data from device to host
   cudaStatus = cudaMemcpy(hm, dev_hm, SIZE * SIZE * sizeof(int), cudaMemcpyDeviceToHost);
