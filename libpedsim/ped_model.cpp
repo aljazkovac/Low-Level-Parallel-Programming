@@ -255,7 +255,7 @@ void Ped::Model::tick()
 		updateHeatmapSeq();
 		stop = clock();
 		double time = float(stop - start)/CLOCKS_PER_SEC;
-		//printf("sequential [s]: %f\n", time);
+		printf("sequential [s]: %f\n", time);
 
 	}
 	
@@ -294,7 +294,13 @@ void Ped::Model::tick()
 		  desiredY[i] = agents[i]->getDesiredY();
 		}
 
+		clock_t start, stop;
+		start = clock();
 		updateHeatmapCuda(desiredX, desiredY, hm, shm, bhm, agents.size());
+		stop = clock();
+		double time = float(stop - start)/CLOCKS_PER_SEC;
+		printf("CUDA [s]: %f\n", time);
+
 	}
 	else if(this->implementation == Ped::SIMD) {
 		__m128 t0, t1, t2, t3, t4, t5, t6, t7, reached, diffX, diffY;
