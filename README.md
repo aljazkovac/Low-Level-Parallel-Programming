@@ -1,3 +1,5 @@
+![llpp-pic](https://github.com/alko5923/Low-Level-Parallel-Programming/blob/main/llpp-pic.png)
+
 # Low-Level Parallel Programming course at Uppsala University
 Assignments for the course. 
 
