@@ -1,4 +1,4 @@
-# 1DL550 LOW-LEVEL PARALLEL PROGRAMMING
+# LOW-LEVEL PARALLEL PROGRAMMING course at Uppsala University
 Assignments for 1DL550 Low-level Parallel Programming course at Uppsala University
 
 ## Prerequisite: Load dependencies on UPPMAX
